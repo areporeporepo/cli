@@ -32,3 +32,11 @@ commit this
 
 (10 core + 9 legacy stubs): <- "legacy stubs?"
 
+### Prompt 6
+
+I was more wondering about "legacy" why are they legacy?
+
+### Prompt 7
+
+why would we differentiate between those messages? or what is the main difference between the 10 and the 9?
+

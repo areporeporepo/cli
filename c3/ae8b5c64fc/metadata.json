@@ -3,7 +3,7 @@
   "checkpoint_id": "c3ae8b5c64fc",
   "strategy": "manual-commit",
   "branch": "main",
-  "checkpoints_count": 2,
+  "checkpoints_count": 1,
   "files_touched": [
     "docs/architecture/agent-guide.md"
   ],
@@ -17,10 +17,10 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 20,
-    "cache_creation_tokens": 248481,
-    "cache_read_tokens": 1352247,
-    "output_tokens": 805,
-    "api_call_count": 14
+    "input_tokens": 31,
+    "cache_creation_tokens": 253524,
+    "cache_read_tokens": 2329707,
+    "output_tokens": 1397,
+    "api_call_count": 21
   }
 }
