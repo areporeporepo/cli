@@ -3,7 +3,7 @@
   "checkpoint_id": "92fa97b54f7d",
   "strategy": "manual-commit",
   "branch": "soph/gemini-tty-fix",
-  "checkpoints_count": 7,
+  "checkpoints_count": 8,
   "files_touched": [
     "cmd/entire/cli/e2e_test/agent_runner.go",
     "cmd/entire/cli/strategy/manual_commit_hooks.go"
@@ -29,13 +29,20 @@
       "context": "/92/fa97b54f7d/2/context.md",
       "content_hash": "/92/fa97b54f7d/2/content_hash.txt",
       "prompt": "/92/fa97b54f7d/2/prompt.txt"
+    },
+    {
+      "metadata": "/92/fa97b54f7d/3/metadata.json",
+      "transcript": "/92/fa97b54f7d/3/full.jsonl",
+      "context": "/92/fa97b54f7d/3/context.md",
+      "content_hash": "/92/fa97b54f7d/3/content_hash.txt",
+      "prompt": "/92/fa97b54f7d/3/prompt.txt"
     }
   ],
   "token_usage": {
-    "input_tokens": 12740,
-    "cache_creation_tokens": 785488,
-    "cache_read_tokens": 34039392,
-    "output_tokens": 956,
-    "api_call_count": 325
+    "input_tokens": 20679,
+    "cache_creation_tokens": 914956,
+    "cache_read_tokens": 40394548,
+    "output_tokens": 1174,
+    "api_call_count": 391
   }
 }
