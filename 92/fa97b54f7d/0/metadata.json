@@ -3,10 +3,11 @@
   "checkpoint_id": "92fa97b54f7d",
   "session_id": "46661ccd-b9b9-46be-8570-807185e3b9e4",
   "strategy": "manual-commit",
-  "created_at": "2026-02-19T17:37:02.103003Z",
+  "created_at": "2026-02-18T21:52:54.441567Z",
   "branch": "soph/gemini-tty-fix",
   "checkpoints_count": 1,
   "files_touched": [
+    "cmd/entire/cli/e2e_test/agent_runner.go",
     "cmd/entire/cli/strategy/manual_commit_hooks.go"
   ],
   "agent": "Claude Code",
@@ -19,12 +20,13 @@
     "api_call_count": 252
   },
   "initial_attribution": {
-    "calculated_at": "2026-02-19T17:37:00.532772Z",
+    "calculated_at": "2026-02-18T21:52:52.947361Z",
     "agent_lines": 0,
-    "human_added": 0,
-    "human_modified": 40,
-    "human_removed": 5,
-    "total_committed": 0,
+    "human_added": 3670,
+    "human_modified": 30,
+    "human_removed": 0,
+    "total_committed": 3670,
     "agent_percentage": 0
-  }
+  },
+  "transcript_path": ".claude/projects/-Users-soph-Work-entire-devenv-cli/46661ccd-b9b9-46be-8570-807185e3b9e4.jsonl"
 }
