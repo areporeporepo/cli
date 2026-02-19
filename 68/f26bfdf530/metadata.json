@@ -8,7 +8,8 @@
     "cmd/entire/cli/integration_test/resume_test.go",
     "cmd/entire/cli/integration_test/setup_cmd_test.go",
     "cmd/entire/cli/integration_test/testenv.go",
-    "cmd/entire/cli/integration_test/worktree_test.go"
+    "cmd/entire/cli/integration_test/worktree_test.go",
+    "cmd/entire/cli/paths/paths.go"
   ],
   "sessions": [
     {

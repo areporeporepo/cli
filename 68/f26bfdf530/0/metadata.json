@@ -3,14 +3,15 @@
   "checkpoint_id": "68f26bfdf530",
   "session_id": "42a7f757-4cbd-4dcf-9d16-8580371b77d3",
   "strategy": "manual-commit",
-  "created_at": "2026-02-19T01:21:16.322142Z",
+  "created_at": "2026-02-19T01:23:29.743686Z",
   "branch": "remove-auto-commit",
   "checkpoints_count": 0,
   "files_touched": [
     "cmd/entire/cli/integration_test/resume_test.go",
     "cmd/entire/cli/integration_test/setup_cmd_test.go",
     "cmd/entire/cli/integration_test/testenv.go",
-    "cmd/entire/cli/integration_test/worktree_test.go"
+    "cmd/entire/cli/integration_test/worktree_test.go",
+    "cmd/entire/cli/paths/paths.go"
   ],
   "agent": "Claude Code",
   "turn_id": "b4483d32e325",
@@ -24,13 +25,13 @@
     "api_call_count": 267
   },
   "initial_attribution": {
-    "calculated_at": "2026-02-19T01:21:15.207634Z",
-    "agent_lines": 52,
-    "human_added": 11,
+    "calculated_at": "2026-02-19T01:23:28.612936Z",
+    "agent_lines": 1,
+    "human_added": 0,
     "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 63,
-    "agent_percentage": 82.53968253968253
+    "total_committed": 1,
+    "agent_percentage": 100
   },
   "transcript_path": ".claude/projects/-Users-gtrrz-victor-wks-cli-remove-auto-commit/42a7f757-4cbd-4dcf-9d16-8580371b77d3.jsonl"
 }
