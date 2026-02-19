@@ -389,16 +389,15 @@ func (r *CopilotRunner) RunPrompt(ctx context.Context, workDir string, prompt st
 	return r.RunPromptWithTools(ctx, workDir, prompt, nil)
 }
 
-func (r *CopilotRunner) RunPromptWithTools(ctx context.Context, workDir string, prompt string, tools []string) (*AgentResult, error) {
+func (r *CopilotRunner) RunPromptWithTools(ctx context.Context, workDir string, prompt string, _ []string) (*AgentResult, error) {
+	// Copilot uses --allow-all-tools for non-interactive mode which grants all permissions.
+	// The tools parameter is ignored because Copilot tool names differ from Claude Code's
+	// (e.g., "bash" vs "Bash", "create" vs "Write") and --available-tools restricts
+	// rather than allows, so passing Claude tool names would disable most tools.
 	args := []string{
 		"--model", r.Model,
 		"-p", prompt,
 		"--allow-all-tools",
-	}
-
-	if len(tools) > 0 {
-		args = append(args, "--available-tools")
-		args = append(args, tools...)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, r.Timeout)

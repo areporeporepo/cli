@@ -1,6 +1,7 @@
 package copilot
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +9,10 @@ import (
 
 	"github.com/entireio/cli/cmd/entire/cli/agent"
 )
+
+// ErrMissingSessionID is returned when a Copilot hook does not include a sessionId.
+// See: https://github.com/github/copilot-cli/issues/1425
+var ErrMissingSessionID = errors.New("copilot hook missing sessionId (see https://github.com/github/copilot-cli/issues/1425)")
 
 // Compile-time interface assertions
 var _ agent.TranscriptAnalyzer = (*CopilotAgent)(nil)
@@ -27,11 +32,8 @@ func (c *CopilotAgent) HookNames() []string {
 }
 
 // ParseHookEvent translates a Copilot hook into a normalized lifecycle Event.
-// Returns nil if the hook has no lifecycle significance (e.g., pass-through hooks).
-//
-// Note: In Copilot CLI, only agentStop provides sessionId and transcriptPath.
-// Other hooks (sessionStart, userPromptSubmitted, sessionEnd) do not include
-// these fields, so the resulting Event will have empty SessionID/SessionRef.
+// Returns nil if the hook has no lifecycle significance (e.g., pass-through hooks)
+// or if the hook lacks a sessionId (the dispatcher requires sessionId for most events).
 func (c *CopilotAgent) ParseHookEvent(hookName string, stdin io.Reader) (*agent.Event, error) {
 	switch hookName {
 	case HookNameSessionStart:
@@ -137,29 +139,37 @@ func (c *CopilotAgent) ExtractModifiedFilesFromOffset(path string, startOffset i
 // --- Internal hook parsing functions ---
 
 // parseSessionStart handles the sessionStart hook.
-// Note: Copilot's sessionStart stdin does NOT include sessionId or transcriptPath.
 func (c *CopilotAgent) parseSessionStart(stdin io.Reader) (*agent.Event, error) {
-	_, err := agent.ReadAndParseHookInput[sessionStartRaw](stdin)
+	raw, err := agent.ReadAndParseHookInput[sessionStartRaw](stdin)
 	if err != nil {
 		return nil, err
 	}
+	if raw.SessionID == "" {
+		return nil, ErrMissingSessionID
+	}
 	return &agent.Event{
-		Type:      agent.SessionStart,
-		Timestamp: time.Now(),
+		Type:       agent.SessionStart,
+		SessionID:  raw.SessionID,
+		SessionRef: raw.TranscriptPath,
+		Timestamp:  time.Now(),
 	}, nil
 }
 
 // parseTurnStart handles the userPromptSubmitted hook.
-// Note: Copilot's userPromptSubmitted stdin does NOT include sessionId or transcriptPath.
 func (c *CopilotAgent) parseTurnStart(stdin io.Reader) (*agent.Event, error) {
 	raw, err := agent.ReadAndParseHookInput[userPromptRaw](stdin)
 	if err != nil {
 		return nil, err
 	}
+	if raw.SessionID == "" {
+		return nil, ErrMissingSessionID
+	}
 	return &agent.Event{
-		Type:      agent.TurnStart,
-		Prompt:    raw.Prompt,
-		Timestamp: time.Now(),
+		Type:       agent.TurnStart,
+		SessionID:  raw.SessionID,
+		SessionRef: raw.TranscriptPath,
+		Prompt:     raw.Prompt,
+		Timestamp:  time.Now(),
 	}, nil
 }
 
@@ -170,6 +180,9 @@ func (c *CopilotAgent) parseTurnEnd(stdin io.Reader) (*agent.Event, error) {
 	if err != nil {
 		return nil, err
 	}
+	if raw.SessionID == "" {
+		return nil, ErrMissingSessionID
+	}
 	return &agent.Event{
 		Type:       agent.TurnEnd,
 		SessionID:  raw.SessionID,
@@ -179,15 +192,19 @@ func (c *CopilotAgent) parseTurnEnd(stdin io.Reader) (*agent.Event, error) {
 }
 
 // parseSessionEnd handles the sessionEnd hook.
-// Note: Copilot's sessionEnd stdin does NOT include sessionId or transcriptPath.
 func (c *CopilotAgent) parseSessionEnd(stdin io.Reader) (*agent.Event, error) {
-	_, err := agent.ReadAndParseHookInput[sessionEndRaw](stdin)
+	raw, err := agent.ReadAndParseHookInput[sessionEndRaw](stdin)
 	if err != nil {
 		return nil, err
 	}
+	if raw.SessionID == "" {
+		return nil, ErrMissingSessionID
+	}
 	return &agent.Event{
-		Type:      agent.SessionEnd,
-		Timestamp: time.Now(),
+		Type:       agent.SessionEnd,
+		SessionID:  raw.SessionID,
+		SessionRef: raw.TranscriptPath,
+		Timestamp:  time.Now(),
 	}, nil
 }
 
@@ -196,6 +213,9 @@ func (c *CopilotAgent) parseSubagentEnd(stdin io.Reader) (*agent.Event, error) {
 	raw, err := agent.ReadAndParseHookInput[subagentStopRaw](stdin)
 	if err != nil {
 		return nil, err
+	}
+	if raw.SessionID == "" {
+		return nil, ErrMissingSessionID
 	}
 	return &agent.Event{
 		Type:       agent.SubagentEnd,

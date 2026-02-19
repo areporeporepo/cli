@@ -1,18 +1,39 @@
 package copilot
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/entireio/cli/cmd/entire/cli/agent"
 )
 
-func TestParseHookEvent_SessionStart(t *testing.T) {
+const (
+	testSessionID      = "abc-123"
+	testTranscriptPath = "/tmp/events.jsonl"
+)
+
+func TestParseHookEvent_SessionStart_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot sessionStart stdin format (no sessionId/transcriptPath)
+	// Copilot sessionStart without sessionId (current behavior)
 	input := `{"timestamp":1771465283476,"cwd":"/Users/test/project","source":"new","initialPrompt":"hello"}`
+
+	_, err := ag.ParseHookEvent(HookNameSessionStart, strings.NewReader(input))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookEvent_SessionStart_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// sessionStart with sessionId (future Copilot behavior)
+	// See: https://github.com/github/copilot-cli/issues/1425
+	input := `{"timestamp":1771465283476,"cwd":"/Users/test/project","source":"new","initialPrompt":"hello","sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	event, err := ag.ParseHookEvent(HookNameSessionStart, strings.NewReader(input))
 
@@ -25,24 +46,38 @@ func TestParseHookEvent_SessionStart(t *testing.T) {
 	if event.Type != agent.SessionStart {
 		t.Errorf("expected event type %v, got %v", agent.SessionStart, event.Type)
 	}
-	// sessionStart does NOT provide sessionId or transcriptPath
-	if event.SessionID != "" {
-		t.Errorf("expected empty session_id, got %q", event.SessionID)
+	if event.SessionID != testSessionID {
+		t.Errorf("expected session_id %q, got %q", testSessionID, event.SessionID)
 	}
-	if event.SessionRef != "" {
-		t.Errorf("expected empty session_ref, got %q", event.SessionRef)
+	if event.SessionRef != testTranscriptPath {
+		t.Errorf("expected session_ref %q, got %q", testTranscriptPath, event.SessionRef)
 	}
 	if event.Timestamp.IsZero() {
 		t.Error("expected non-zero timestamp")
 	}
 }
 
-func TestParseHookEvent_TurnStart(t *testing.T) {
+func TestParseHookEvent_TurnStart_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot userPromptSubmitted stdin format
+	// Copilot userPromptSubmitted without sessionId (current behavior)
 	input := `{"timestamp":1771465282293,"cwd":"/Users/test/project","prompt":"Hello Copilot"}`
+
+	_, err := ag.ParseHookEvent(HookNameUserPromptSubmitted, strings.NewReader(input))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookEvent_TurnStart_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// userPromptSubmitted with sessionId (future Copilot behavior)
+	// See: https://github.com/github/copilot-cli/issues/1425
+	input := `{"timestamp":1771465282293,"cwd":"/Users/test/project","prompt":"Hello Copilot","sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	event, err := ag.ParseHookEvent(HookNameUserPromptSubmitted, strings.NewReader(input))
 
@@ -55,12 +90,11 @@ func TestParseHookEvent_TurnStart(t *testing.T) {
 	if event.Type != agent.TurnStart {
 		t.Errorf("expected event type %v, got %v", agent.TurnStart, event.Type)
 	}
-	// userPromptSubmitted does NOT provide sessionId
-	if event.SessionID != "" {
-		t.Errorf("expected empty session_id, got %q", event.SessionID)
+	if event.SessionID != testSessionID {
+		t.Errorf("expected session_id %q, got %q", testSessionID, event.SessionID)
 	}
 	if event.Prompt != "Hello Copilot" {
-		t.Errorf("expected prompt 'Hello Copilot', got %q", event.Prompt)
+		t.Errorf("expected prompt %q, got %q", "Hello Copilot", event.Prompt)
 	}
 }
 
@@ -68,7 +102,6 @@ func TestParseHookEvent_TurnEnd(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot agentStop stdin format - the ONLY hook with sessionId and transcriptPath
 	input := `{
 		"timestamp": 1771465289990,
 		"cwd": "/Users/test/project",
@@ -96,12 +129,27 @@ func TestParseHookEvent_TurnEnd(t *testing.T) {
 	}
 }
 
-func TestParseHookEvent_SessionEnd(t *testing.T) {
+func TestParseHookEvent_SessionEnd_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot sessionEnd stdin format
+	// Copilot sessionEnd without sessionId (current behavior)
 	input := `{"timestamp":1771465290000,"cwd":"/Users/test/project","reason":"complete"}`
+
+	_, err := ag.ParseHookEvent(HookNameSessionEnd, strings.NewReader(input))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookEvent_SessionEnd_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// sessionEnd with sessionId (future Copilot behavior)
+	// See: https://github.com/github/copilot-cli/issues/1425
+	input := `{"timestamp":1771465290000,"cwd":"/Users/test/project","reason":"complete","sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	event, err := ag.ParseHookEvent(HookNameSessionEnd, strings.NewReader(input))
 
@@ -114,9 +162,11 @@ func TestParseHookEvent_SessionEnd(t *testing.T) {
 	if event.Type != agent.SessionEnd {
 		t.Errorf("expected event type %v, got %v", agent.SessionEnd, event.Type)
 	}
-	// sessionEnd does NOT provide sessionId
-	if event.SessionID != "" {
-		t.Errorf("expected empty session_id, got %q", event.SessionID)
+	if event.SessionID != testSessionID {
+		t.Errorf("expected session_id %q, got %q", testSessionID, event.SessionID)
+	}
+	if event.SessionRef != testTranscriptPath {
+		t.Errorf("expected session_ref %q, got %q", testTranscriptPath, event.SessionRef)
 	}
 }
 
@@ -213,9 +263,11 @@ func TestParseHookEvent_MalformedJSON(t *testing.T) {
 	}
 }
 
-func TestParseHookEvent_AllLifecycleHooks(t *testing.T) {
+func TestParseHookEvent_AllLifecycleHooks_WithSessionID(t *testing.T) {
 	t.Parallel()
 
+	// When sessionId is present, all lifecycle hooks should produce events.
+	// See: https://github.com/github/copilot-cli/issues/1425
 	testCases := []struct {
 		hookName      string
 		expectedType  agent.EventType
@@ -225,12 +277,12 @@ func TestParseHookEvent_AllLifecycleHooks(t *testing.T) {
 		{
 			hookName:      HookNameSessionStart,
 			expectedType:  agent.SessionStart,
-			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","source":"new"}`,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","source":"new","sessionId":"s1","transcriptPath":"/t"}`,
 		},
 		{
 			hookName:      HookNameUserPromptSubmitted,
 			expectedType:  agent.TurnStart,
-			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","prompt":"hi"}`,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","prompt":"hi","sessionId":"s2","transcriptPath":"/t"}`,
 		},
 		{
 			hookName:      HookNameAgentStop,
@@ -240,22 +292,22 @@ func TestParseHookEvent_AllLifecycleHooks(t *testing.T) {
 		{
 			hookName:      HookNameSessionEnd,
 			expectedType:  agent.SessionEnd,
-			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","reason":"complete"}`,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","reason":"complete","sessionId":"s4","transcriptPath":"/t"}`,
 		},
 		{
 			hookName:      HookNameSubagentStop,
 			expectedType:  agent.SubagentEnd,
-			inputTemplate: `{"timestamp":1000,"cwd":"/tmp"}`,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","sessionId":"s5","transcriptPath":"/t"}`,
 		},
 		{
 			hookName:      HookNamePreToolUse,
 			expectNil:     true,
-			inputTemplate: `{"timestamp":1000,"cwd":"/tmp"}`,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","sessionId":"s6"}`,
 		},
 		{
 			hookName:      HookNamePostToolUse,
 			expectNil:     true,
-			inputTemplate: `{"timestamp":1000,"cwd":"/tmp"}`,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","sessionId":"s6"}`,
 		},
 		{
 			hookName:      HookNameErrorOccurred,
@@ -287,6 +339,44 @@ func TestParseHookEvent_AllLifecycleHooks(t *testing.T) {
 			}
 			if event.Type != tc.expectedType {
 				t.Errorf("expected event type %v, got %v", tc.expectedType, event.Type)
+			}
+		})
+	}
+}
+
+func TestParseHookEvent_WithoutSessionID_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// When sessionId is absent (current Copilot behavior), lifecycle hooks
+	// should return ErrMissingSessionID.
+	// See: https://github.com/github/copilot-cli/issues/1425
+	hooks := []struct {
+		hookName      string
+		inputTemplate string
+	}{
+		{
+			hookName:      HookNameSessionStart,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","source":"new"}`,
+		},
+		{
+			hookName:      HookNameUserPromptSubmitted,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","prompt":"hi"}`,
+		},
+		{
+			hookName:      HookNameSessionEnd,
+			inputTemplate: `{"timestamp":1000,"cwd":"/tmp","reason":"complete"}`,
+		},
+	}
+
+	for _, tc := range hooks {
+		t.Run(tc.hookName, func(t *testing.T) {
+			t.Parallel()
+
+			ag := &CopilotAgent{}
+			_, err := ag.ParseHookEvent(tc.hookName, strings.NewReader(tc.inputTemplate))
+
+			if !errors.Is(err, ErrMissingSessionID) {
+				t.Errorf("expected ErrMissingSessionID, got %v", err)
 			}
 		})
 	}

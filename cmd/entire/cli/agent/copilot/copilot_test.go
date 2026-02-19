@@ -2,6 +2,7 @@ package copilot
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -191,39 +192,62 @@ func TestFormatResumeCommand(t *testing.T) {
 	}
 }
 
-func TestParseHookInput_SessionStart(t *testing.T) {
+func TestParseHookInput_SessionStart_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot sessionStart stdin format (no sessionId/transcriptPath)
+	// Copilot sessionStart without sessionId (current behavior)
 	input := `{"timestamp":1771465283476,"cwd":"/project","source":"new","initialPrompt":"hello"}`
+
+	_, err := ag.ParseHookInput(agent.HookSessionStart, bytes.NewReader([]byte(input)))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookInput_SessionStart_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// sessionStart with sessionId (future Copilot behavior)
+	// See: https://github.com/github/copilot-cli/issues/1425
+	input := `{"timestamp":1771465283476,"cwd":"/project","source":"new","initialPrompt":"hello","sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	hookInput, err := ag.ParseHookInput(agent.HookSessionStart, bytes.NewReader([]byte(input)))
 	if err != nil {
 		t.Fatalf("ParseHookInput() error = %v", err)
 	}
 
-	// sessionStart does NOT provide sessionId or transcriptPath
-	if hookInput.SessionID != "" {
-		t.Errorf("SessionID = %q, want empty (sessionStart has no sessionId)", hookInput.SessionID)
+	if hookInput.SessionID != testSessionID {
+		t.Errorf("SessionID = %q, want %q", hookInput.SessionID, testSessionID)
 	}
-	if hookInput.SessionRef != "" {
-		t.Errorf("SessionRef = %q, want empty (sessionStart has no transcriptPath)", hookInput.SessionRef)
-	}
-	if hookInput.RawData["cwd"] != "/project" {
-		t.Errorf("RawData[cwd] = %q, want /project", hookInput.RawData["cwd"])
-	}
-	if hookInput.RawData["source"] != "new" {
-		t.Errorf("RawData[source] = %q, want new", hookInput.RawData["source"])
+	if hookInput.SessionRef != testTranscriptPath {
+		t.Errorf("SessionRef = %q, want %q", hookInput.SessionRef, testTranscriptPath)
 	}
 }
 
-func TestParseHookInput_UserPrompt(t *testing.T) {
+func TestParseHookInput_UserPrompt_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot userPromptSubmitted stdin format (no sessionId)
+	// Copilot userPromptSubmitted without sessionId (current behavior)
 	input := `{"timestamp":1771465282293,"cwd":"/project","prompt":"Fix the bug"}`
+
+	_, err := ag.ParseHookInput(agent.HookUserPromptSubmit, bytes.NewReader([]byte(input)))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookInput_UserPrompt_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// userPromptSubmitted with sessionId (future Copilot behavior)
+	// See: https://github.com/github/copilot-cli/issues/1425
+	input := `{"timestamp":1771465282293,"cwd":"/project","prompt":"Fix the bug","sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	hookInput, err := ag.ParseHookInput(agent.HookUserPromptSubmit, bytes.NewReader([]byte(input)))
 	if err != nil {
@@ -233,18 +257,34 @@ func TestParseHookInput_UserPrompt(t *testing.T) {
 	if hookInput.UserPrompt != "Fix the bug" {
 		t.Errorf("UserPrompt = %q, want 'Fix the bug'", hookInput.UserPrompt)
 	}
-	// userPromptSubmitted does NOT provide sessionId
-	if hookInput.SessionID != "" {
-		t.Errorf("SessionID = %q, want empty", hookInput.SessionID)
+	if hookInput.SessionID != testSessionID {
+		t.Errorf("SessionID = %q, want %q", hookInput.SessionID, testSessionID)
+	}
+	if hookInput.SessionRef != testTranscriptPath {
+		t.Errorf("SessionRef = %q, want %q", hookInput.SessionRef, testTranscriptPath)
 	}
 }
 
-func TestParseHookInput_ToolUse(t *testing.T) {
+func TestParseHookInput_ToolUse_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot preToolUse stdin format
+	// Copilot preToolUse without sessionId (current behavior)
 	input := `{"timestamp":1771465284000,"cwd":"/project","toolName":"edit","toolArgs":{"file_path":"test.go"}}`
+
+	_, err := ag.ParseHookInput(agent.HookPreToolUse, bytes.NewReader([]byte(input)))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookInput_ToolUse_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// preToolUse with sessionId (future Copilot behavior)
+	input := `{"timestamp":1771465284000,"cwd":"/project","toolName":"edit","toolArgs":{"file_path":"test.go"},"sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	hookInput, err := ag.ParseHookInput(agent.HookPreToolUse, bytes.NewReader([]byte(input)))
 	if err != nil {
@@ -257,13 +297,15 @@ func TestParseHookInput_ToolUse(t *testing.T) {
 	if hookInput.ToolInput == nil {
 		t.Error("ToolInput is nil")
 	}
+	if hookInput.SessionID != testSessionID {
+		t.Errorf("SessionID = %q, want %q", hookInput.SessionID, testSessionID)
+	}
 }
 
 func TestParseHookInput_AgentStop(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// agentStop is the ONLY hook with sessionId and transcriptPath
 	input := `{"timestamp":1771465289990,"cwd":"/project","sessionId":"733bfbbd-bd9b-4750-a55b-3c8cc42629de","transcriptPath":"/home/user/.copilot/session-state/733bfbbd/events.jsonl","stopReason":"end_turn"}`
 
 	hookInput, err := ag.ParseHookInput(agent.HookStop, bytes.NewReader([]byte(input)))
@@ -282,21 +324,38 @@ func TestParseHookInput_AgentStop(t *testing.T) {
 	}
 }
 
-func TestParseHookInput_SessionEnd(t *testing.T) {
+func TestParseHookInput_SessionEnd_WithoutSessionID(t *testing.T) {
 	t.Parallel()
 
 	ag := &CopilotAgent{}
-	// Actual Copilot sessionEnd stdin format (no sessionId)
+	// Copilot sessionEnd without sessionId (current behavior)
 	input := `{"timestamp":1771465290000,"cwd":"/project","reason":"complete"}`
+
+	_, err := ag.ParseHookInput(agent.HookSessionEnd, bytes.NewReader([]byte(input)))
+
+	if !errors.Is(err, ErrMissingSessionID) {
+		t.Errorf("expected ErrMissingSessionID, got %v", err)
+	}
+}
+
+func TestParseHookInput_SessionEnd_WithSessionID(t *testing.T) {
+	t.Parallel()
+
+	ag := &CopilotAgent{}
+	// sessionEnd with sessionId (future Copilot behavior)
+	// See: https://github.com/github/copilot-cli/issues/1425
+	input := `{"timestamp":1771465290000,"cwd":"/project","reason":"complete","sessionId":"` + testSessionID + `","transcriptPath":"` + testTranscriptPath + `"}`
 
 	hookInput, err := ag.ParseHookInput(agent.HookSessionEnd, bytes.NewReader([]byte(input)))
 	if err != nil {
 		t.Fatalf("ParseHookInput() error = %v", err)
 	}
 
-	// sessionEnd does NOT provide sessionId
-	if hookInput.SessionID != "" {
-		t.Errorf("SessionID = %q, want empty", hookInput.SessionID)
+	if hookInput.SessionID != testSessionID {
+		t.Errorf("SessionID = %q, want %q", hookInput.SessionID, testSessionID)
+	}
+	if hookInput.SessionRef != testTranscriptPath {
+		t.Errorf("SessionRef = %q, want %q", hookInput.SessionRef, testTranscriptPath)
 	}
 	if hookInput.RawData["reason"] != "complete" {
 		t.Errorf("RawData[reason] = %q, want complete", hookInput.RawData["reason"])

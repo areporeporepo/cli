@@ -17,17 +17,23 @@ type hookEntry struct {
 
 // --- Hook stdin types (from actual Copilot CLI v0.0.411 capture) ---
 //
-// Common fields: only "timestamp" (unix milliseconds) and "cwd" are present in all hooks.
-// "sessionId" and "transcriptPath" are only present in the agentStop hook.
+// Common fields: "timestamp" (unix milliseconds) and "cwd" are present in all hooks.
+// "sessionId" and "transcriptPath" are currently only sent by the agentStop hook,
+// but are declared in hookBase so that all hooks parse them when Copilot adds support.
+// See: https://github.com/github/copilot-cli/issues/1425
 
-// hookBase contains the only fields present in ALL Copilot hook stdin JSON.
+// hookBase contains fields present in Copilot hook stdin JSON.
+// sessionId and transcriptPath are optional: currently only agentStop sends them,
+// but they are included here so all hooks will pick them up automatically.
 type hookBase struct {
-	Timestamp int64  `json:"timestamp"`
-	Cwd       string `json:"cwd"`
+	Timestamp      int64  `json:"timestamp"`
+	Cwd            string `json:"cwd"`
+	SessionID      string `json:"sessionId,omitempty"`
+	TranscriptPath string `json:"transcriptPath,omitempty"`
 }
 
 // sessionStartRaw is the stdin JSON for the sessionStart hook.
-// Example: {"timestamp":1771465283476,"cwd":"/path","source":"new","initialPrompt":"..."}
+// Example: {"timestamp":1771465283476,"cwd":"/path","source":"new","initialPrompt":"...","sessionId":"uuid","transcriptPath":"/path/events.jsonl"}
 type sessionStartRaw struct {
 	hookBase
 
@@ -36,7 +42,7 @@ type sessionStartRaw struct {
 }
 
 // sessionEndRaw is the stdin JSON for the sessionEnd hook.
-// Example: {"timestamp":1771465290000,"cwd":"/path","reason":"complete"}
+// Example: {"timestamp":1771465290000,"cwd":"/path","reason":"complete","sessionId":"uuid","transcriptPath":"/path/events.jsonl"}
 type sessionEndRaw struct {
 	hookBase
 
@@ -44,7 +50,7 @@ type sessionEndRaw struct {
 }
 
 // userPromptRaw is the stdin JSON for the userPromptSubmitted hook.
-// Example: {"timestamp":1771465282293,"cwd":"/path","prompt":"..."}
+// Example: {"timestamp":1771465282293,"cwd":"/path","prompt":"...","sessionId":"uuid","transcriptPath":"/path/events.jsonl"}
 type userPromptRaw struct {
 	hookBase
 
@@ -52,23 +58,18 @@ type userPromptRaw struct {
 }
 
 // agentStopRaw is the stdin JSON for the agentStop hook.
-// This is the only hook that includes sessionId and transcriptPath.
+// This hook always includes sessionId and transcriptPath.
 // Example: {"timestamp":...,"cwd":"/path","sessionId":"uuid","transcriptPath":"/path/events.jsonl","stopReason":"end_turn"}
 type agentStopRaw struct {
 	hookBase
 
-	SessionID      string `json:"sessionId"`
-	TranscriptPath string `json:"transcriptPath"`
-	StopReason     string `json:"stopReason,omitempty"`
+	StopReason string `json:"stopReason,omitempty"`
 }
 
 // subagentStopRaw is the stdin JSON for the subagentStop hook.
 // Assumed to follow agentStop format (not yet captured in the wild).
 type subagentStopRaw struct {
 	hookBase
-
-	SessionID      string `json:"sessionId,omitempty"`
-	TranscriptPath string `json:"transcriptPath,omitempty"`
 }
 
 // toolUseRaw is the stdin JSON for preToolUse/postToolUse hooks.

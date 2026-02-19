@@ -101,6 +101,8 @@ func (c *CopilotAgent) ParseHookInput(hookType agent.HookType, reader io.Reader)
 		if err := json.Unmarshal(data, &raw); err != nil {
 			return nil, fmt.Errorf("failed to parse hook input: %w", err)
 		}
+		input.SessionID = raw.SessionID
+		input.SessionRef = raw.TranscriptPath
 		input.RawData["cwd"] = raw.Cwd
 		input.RawData["source"] = raw.Source
 
@@ -109,11 +111,12 @@ func (c *CopilotAgent) ParseHookInput(hookType agent.HookType, reader io.Reader)
 		if err := json.Unmarshal(data, &raw); err != nil {
 			return nil, fmt.Errorf("failed to parse hook input: %w", err)
 		}
+		input.SessionID = raw.SessionID
+		input.SessionRef = raw.TranscriptPath
 		input.RawData["cwd"] = raw.Cwd
 		input.RawData["reason"] = raw.Reason
 
 	case agent.HookStop:
-		// agentStop is the only hook with sessionId and transcriptPath
 		var raw agentStopRaw
 		if err := json.Unmarshal(data, &raw); err != nil {
 			return nil, fmt.Errorf("failed to parse hook input: %w", err)
@@ -128,6 +131,8 @@ func (c *CopilotAgent) ParseHookInput(hookType agent.HookType, reader io.Reader)
 		if err := json.Unmarshal(data, &raw); err != nil {
 			return nil, fmt.Errorf("failed to parse hook input: %w", err)
 		}
+		input.SessionID = raw.SessionID
+		input.SessionRef = raw.TranscriptPath
 		input.RawData["cwd"] = raw.Cwd
 		if raw.Prompt != "" {
 			input.UserPrompt = raw.Prompt
@@ -139,12 +144,18 @@ func (c *CopilotAgent) ParseHookInput(hookType agent.HookType, reader io.Reader)
 		if err := json.Unmarshal(data, &raw); err != nil {
 			return nil, fmt.Errorf("failed to parse tool hook input: %w", err)
 		}
+		input.SessionID = raw.SessionID
+		input.SessionRef = raw.TranscriptPath
 		input.ToolName = raw.ToolName
 		input.ToolInput = raw.ToolArgs
 		if hookType == agent.HookPostToolUse {
 			input.ToolResponse = raw.ToolResult
 		}
 		input.RawData["cwd"] = raw.Cwd
+	}
+
+	if input.SessionID == "" {
+		return nil, ErrMissingSessionID
 	}
 
 	return input, nil
