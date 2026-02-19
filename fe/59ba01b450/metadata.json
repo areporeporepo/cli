@@ -3,7 +3,7 @@
   "checkpoint_id": "fe59ba01b450",
   "strategy": "manual-commit",
   "branch": "alisha/factoryai-agent",
-  "checkpoints_count": 4,
+  "checkpoints_count": 5,
   "files_touched": [
     "cmd/entire/cli/agent/factoryaidroid/lifecycle.go",
     "cmd/entire/cli/agent/factoryaidroid/transcript.go",
@@ -26,6 +26,13 @@
       "context": "/fe/59ba01b450/1/context.md",
       "content_hash": "/fe/59ba01b450/1/content_hash.txt",
       "prompt": "/fe/59ba01b450/1/prompt.txt"
+    },
+    {
+      "metadata": "/fe/59ba01b450/2/metadata.json",
+      "transcript": "/fe/59ba01b450/2/full.jsonl",
+      "context": "",
+      "content_hash": "/fe/59ba01b450/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
