@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/entireio/cli/cmd/entire/cli/agent"
+	"github.com/entireio/cli/cmd/entire/cli/agent/copilot"
 	"github.com/entireio/cli/cmd/entire/cli/agent/geminicli"
 	"github.com/entireio/cli/cmd/entire/cli/checkpoint"
 	"github.com/entireio/cli/cmd/entire/cli/transcript"
@@ -116,8 +117,10 @@ func BuildCondensedTranscriptFromBytes(content []byte, agentType agent.AgentType
 	switch agentType {
 	case agent.AgentTypeGemini:
 		return buildCondensedTranscriptFromGemini(content)
+	case agent.AgentTypeCopilot:
+		return buildCondensedTranscriptFromCopilot(content)
 	case agent.AgentTypeClaudeCode, agent.AgentTypeUnknown:
-		// Claude format - fall through to shared logic below
+		// JSONL format - fall through to shared logic below
 	}
 	// Claude format (JSONL) - handles Claude Code, Unknown, and any future agent types
 	lines, err := transcript.ParseFromBytes(content)
@@ -166,8 +169,73 @@ func buildCondensedTranscriptFromGemini(content []byte) ([]Entry, error) {
 	return entries, nil
 }
 
+// buildCondensedTranscriptFromCopilot parses a Copilot events.jsonl transcript
+// and extracts a condensed view for summarization.
+func buildCondensedTranscriptFromCopilot(content []byte) ([]Entry, error) {
+	events, err := copilot.ParseTranscript(content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse Copilot transcript: %w", err)
+	}
+
+	var entries []Entry
+	for _, event := range events {
+		switch event.Type {
+		case copilot.EventUserMessage:
+			var data struct {
+				Content string `json:"content"`
+			}
+			if err := json.Unmarshal(event.Data, &data); err != nil {
+				continue
+			}
+			if data.Content != "" {
+				entries = append(entries, Entry{
+					Type:    EntryTypeUser,
+					Content: data.Content,
+				})
+			}
+
+		case copilot.EventAssistantMessage:
+			var data struct {
+				Content      string `json:"content"`
+				ToolRequests []struct {
+					Name      string         `json:"name"`
+					Arguments map[string]any `json:"arguments"`
+				} `json:"toolRequests"`
+			}
+			if err := json.Unmarshal(event.Data, &data); err != nil {
+				continue
+			}
+			if data.Content != "" {
+				entries = append(entries, Entry{
+					Type:    EntryTypeAssistant,
+					Content: data.Content,
+				})
+			}
+			for _, tc := range data.ToolRequests {
+				entries = append(entries, Entry{
+					Type:       EntryTypeTool,
+					ToolName:   tc.Name,
+					ToolDetail: extractCopilotToolDetail(tc.Arguments),
+				})
+			}
+		}
+	}
+
+	return entries, nil
+}
+
+// extractCopilotToolDetail extracts an appropriate detail string from Copilot tool args.
+func extractCopilotToolDetail(args map[string]any) string {
+	for _, key := range []string{"path", "command", "file_path", "pattern", "description"} {
+		if v, ok := args[key].(string); ok && v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 // extractGeminiToolDetail extracts an appropriate detail string from Gemini tool args.
-func extractGeminiToolDetail(args map[string]interface{}) string {
+func extractGeminiToolDetail(args map[string]any) string {
 	// Check common fields in order of preference
 	for _, key := range []string{"description", "command", "file_path", "path", "pattern"} {
 		if v, ok := args[key].(string); ok && v != "" {

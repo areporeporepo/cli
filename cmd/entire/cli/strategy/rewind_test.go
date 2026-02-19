@@ -8,6 +8,7 @@ import (
 
 	"github.com/entireio/cli/cmd/entire/cli/agent"
 	_ "github.com/entireio/cli/cmd/entire/cli/agent/claudecode" // Register agent for ResolveAgentForRewind tests
+	_ "github.com/entireio/cli/cmd/entire/cli/agent/copilot"    // Register agent for ResolveAgentForRewind tests
 	_ "github.com/entireio/cli/cmd/entire/cli/agent/geminicli"  // Register agent for ResolveAgentForRewind tests
 
 	"github.com/go-git/go-git/v5"

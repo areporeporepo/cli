@@ -12,6 +12,7 @@ import (
 
 	"github.com/entireio/cli/cmd/entire/cli/agent"
 	"github.com/entireio/cli/cmd/entire/cli/agent/claudecode"
+	"github.com/entireio/cli/cmd/entire/cli/agent/copilot"
 	"github.com/entireio/cli/cmd/entire/cli/agent/geminicli"
 	"github.com/entireio/cli/cmd/entire/cli/logging"
 	"github.com/entireio/cli/cmd/entire/cli/paths"
@@ -76,9 +77,9 @@ func newAgentHooksCmd(agentName agent.AgentName, handler agent.HookHandler) *cob
 // "agent" for all other agent hooks.
 func getHookType(hookName string) string {
 	switch hookName {
-	case claudecode.HookNamePreTask, claudecode.HookNamePostTask, claudecode.HookNamePostTodo:
+	case claudecode.HookNamePreTask, claudecode.HookNamePostTask, claudecode.HookNamePostTodo, copilot.HookNameSubagentStop:
 		return "subagent"
-	case geminicli.HookNameBeforeTool, geminicli.HookNameAfterTool:
+	case geminicli.HookNameBeforeTool, geminicli.HookNameAfterTool, copilot.HookNamePreToolUse, copilot.HookNamePostToolUse:
 		return "tool"
 	default:
 		return "agent"
