@@ -19,6 +19,9 @@ const AgentNameClaudeCode = "claude-code"
 // AgentNameGemini is the name for Gemini CLI agent.
 const AgentNameGemini = "gemini"
 
+// AgentNameCopilot is the name for GitHub Copilot CLI agent.
+const AgentNameCopilot = "github-copilot"
+
 // AgentRunner abstracts invoking a coding agent for e2e tests.
 // This follows the multi-agent pattern from cmd/entire/cli/agent/agent.go.
 type AgentRunner interface {
@@ -58,6 +61,8 @@ func NewAgentRunner(name string, config AgentRunnerConfig) AgentRunner {
 		return NewClaudeCodeRunner(config)
 	case AgentNameGemini:
 		return NewGeminiCLIRunner(config)
+	case AgentNameCopilot:
+		return NewCopilotRunner(config)
 	default:
 		// Return a runner that reports as unavailable
 		return &unavailableRunner{name: name}
@@ -294,6 +299,113 @@ func (r *GeminiCLIRunner) RunPromptWithTools(ctx context.Context, workDir string
 
 	//nolint:gosec // args are constructed from trusted config, not user input
 	cmd := exec.CommandContext(ctx, "gemini", args...)
+	cmd.Dir = workDir
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	start := time.Now()
+	err := cmd.Run()
+	duration := time.Since(start)
+
+	result := &AgentResult{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		Duration: duration,
+	}
+
+	if err != nil {
+		exitErr := &exec.ExitError{}
+		if errors.As(err, &exitErr) {
+			result.ExitCode = exitErr.ExitCode()
+		} else {
+			result.ExitCode = -1
+		}
+		//nolint:wrapcheck // error is from exec.Run, caller can check ExitCode in result
+		return result, err
+	}
+
+	result.ExitCode = 0
+	return result, nil
+}
+
+// CopilotRunner implements AgentRunner for GitHub Copilot CLI.
+type CopilotRunner struct {
+	Model   string
+	Timeout time.Duration
+}
+
+// NewCopilotRunner creates a new Copilot CLI runner with the given config.
+func NewCopilotRunner(config AgentRunnerConfig) *CopilotRunner {
+	model := config.Model
+	if model == "" {
+		model = os.Getenv("E2E_COPILOT_MODEL")
+		if model == "" {
+			model = "claude-haiku-4.5"
+		}
+	}
+
+	timeout := config.Timeout
+	if timeout == 0 {
+		if envTimeout := os.Getenv("E2E_TIMEOUT"); envTimeout != "" {
+			if parsed, err := time.ParseDuration(envTimeout); err == nil {
+				timeout = parsed
+			}
+		}
+		if timeout == 0 {
+			timeout = 2 * time.Minute
+		}
+	}
+
+	return &CopilotRunner{
+		Model:   model,
+		Timeout: timeout,
+	}
+}
+
+func (r *CopilotRunner) Name() string {
+	return AgentNameCopilot
+}
+
+// IsAvailable checks if Copilot CLI is installed and responds to --version.
+func (r *CopilotRunner) IsAvailable() (bool, error) {
+	if _, err := exec.LookPath("copilot"); err != nil {
+		return false, fmt.Errorf("copilot CLI not found in PATH: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "copilot", "--version")
+	if err := cmd.Run(); err != nil {
+		return false, fmt.Errorf("copilot CLI not working: %w", err)
+	}
+
+	return true, nil
+}
+
+func (r *CopilotRunner) RunPrompt(ctx context.Context, workDir string, prompt string) (*AgentResult, error) {
+	return r.RunPromptWithTools(ctx, workDir, prompt, nil)
+}
+
+func (r *CopilotRunner) RunPromptWithTools(ctx context.Context, workDir string, prompt string, tools []string) (*AgentResult, error) {
+	args := []string{
+		"--model", r.Model,
+		"-p", prompt,
+		"--allow-all-tools",
+	}
+
+	if len(tools) > 0 {
+		args = append(args, "--available-tools")
+		args = append(args, tools...)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, r.Timeout)
+	defer cancel()
+
+	//nolint:gosec // args are constructed from trusted config, not user input
+	cmd := exec.CommandContext(ctx, "copilot", args...)
 	cmd.Dir = workDir
 
 	var stdout, stderr bytes.Buffer
