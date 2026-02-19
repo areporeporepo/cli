@@ -3,7 +3,7 @@
   "checkpoint_id": "c74816392558",
   "strategy": "manual-commit",
   "branch": "gtrrz-victor/github-copilot-support",
-  "checkpoints_count": 4,
+  "checkpoints_count": 2,
   "files_touched": [
     "cmd/entire/cli/agent/copilot/copilot.go",
     "cmd/entire/cli/agent/copilot/copilot_test.go",

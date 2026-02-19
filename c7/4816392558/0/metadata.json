@@ -3,27 +3,16 @@
   "checkpoint_id": "c74816392558",
   "session_id": "80f8a4c6-43a7-40f7-ae13-62f0cc2727dc",
   "strategy": "manual-commit",
-  "created_at": "2026-02-19T03:20:05.12165Z",
+  "created_at": "2026-02-19T03:26:35.181312Z",
   "branch": "gtrrz-victor/github-copilot-support",
-  "checkpoints_count": 3,
+  "checkpoints_count": 1,
   "files_touched": [
-    "cmd/entire/cli/agent/copilot/copilot.go",
-    "cmd/entire/cli/agent/copilot/copilot_test.go",
     "cmd/entire/cli/agent/copilot/hooks.go",
     "cmd/entire/cli/agent/copilot/hooks_test.go",
     "cmd/entire/cli/agent/copilot/lifecycle.go",
-    "cmd/entire/cli/agent/copilot/lifecycle_test.go",
     "cmd/entire/cli/agent/copilot/transcript.go",
     "cmd/entire/cli/agent/copilot/transcript_test.go",
-    "cmd/entire/cli/agent/copilot/types.go",
-    "cmd/entire/cli/agent/registry.go",
-    "cmd/entire/cli/hook_registry.go",
-    "cmd/entire/cli/hooks_cmd.go",
-    "cmd/entire/cli/setup.go",
-    "cmd/entire/cli/setup_test.go",
-    "cmd/entire/cli/strategy/rewind_test.go",
-    "cmd/entire/cli/summarize/summarize.go",
-    "copilot-integration.md"
+    "cmd/entire/cli/agent/copilot/types.go"
   ],
   "agent": "Claude Code",
   "turn_id": "01ded68028a9",
@@ -35,13 +24,13 @@
     "api_call_count": 195
   },
   "initial_attribution": {
-    "calculated_at": "2026-02-19T03:20:03.946927Z",
-    "agent_lines": 2917,
+    "calculated_at": "2026-02-19T03:26:34.201757Z",
+    "agent_lines": 2,
     "human_added": 0,
-    "human_modified": 96,
-    "human_removed": 12,
-    "total_committed": 3013,
-    "agent_percentage": 96.8138068370395
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2,
+    "agent_percentage": 100
   },
   "transcript_path": ".claude/projects/-Users-gtrrz-victor-wks-cli-cli/80f8a4c6-43a7-40f7-ae13-62f0cc2727dc.jsonl"
 }
