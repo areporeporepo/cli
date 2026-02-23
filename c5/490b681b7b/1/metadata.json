@@ -3,32 +3,28 @@
   "checkpoint_id": "c5490b681b7b",
   "session_id": "f5948329-6a47-406a-9742-147b4b94dcfd",
   "strategy": "manual-commit",
-  "created_at": "2026-02-23T00:28:34.454584Z",
+  "created_at": "2026-02-23T00:33:50.119299Z",
   "branch": "gtrrz-victor/opencode-refactor-2",
-  "checkpoints_count": 4,
+  "checkpoints_count": 1,
   "files_touched": [
-    "cmd/entire/cli/agent/opencode/opencode.go",
-    "cmd/entire/cli/agent/session.go",
-    "cmd/entire/cli/resume.go",
-    "cmd/entire/cli/rewind.go",
-    "cmd/entire/cli/strategy/manual_commit_rewind.go"
+    "cmd/entire/cli/agent/opencode/cli_commands.go"
   ],
   "agent": "Claude Code",
   "turn_id": "42b8b7e564b3",
   "token_usage": {
-    "input_tokens": 705,
-    "cache_creation_tokens": 1107940,
-    "cache_read_tokens": 56590475,
-    "output_tokens": 25064,
-    "api_call_count": 484
+    "input_tokens": 707,
+    "cache_creation_tokens": 1108356,
+    "cache_read_tokens": 56747281,
+    "output_tokens": 25115,
+    "api_call_count": 486
   },
   "initial_attribution": {
-    "calculated_at": "2026-02-23T00:28:32.458452Z",
-    "agent_lines": 3,
+    "calculated_at": "2026-02-23T00:33:48.235187Z",
+    "agent_lines": 0,
     "human_added": 0,
     "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 3,
-    "agent_percentage": 100
+    "total_committed": 0,
+    "agent_percentage": 0
   }
 }
