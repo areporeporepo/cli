@@ -5,7 +5,9 @@
   "branch": "gtrrz-victor/opencode-refactor-2",
   "checkpoints_count": 4,
   "files_touched": [
+    "cmd/entire/cli/agent/opencode/cli_commands.go",
     "cmd/entire/cli/agent/opencode/opencode.go",
+    "cmd/entire/cli/agent/opencode/sqlite.go",
     "cmd/entire/cli/agent/session.go",
     "cmd/entire/cli/resume.go",
     "cmd/entire/cli/rewind.go",
