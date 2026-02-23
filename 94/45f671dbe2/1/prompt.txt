@@ -1404,3 +1404,8 @@ Summary:
 
 If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/gtrrz-victor/.REDACTED.jsonl
 Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.
+
+---
+
+opencode session delete should not fail if the session is not found, right now entire resume fails with:
+Error: Session not found

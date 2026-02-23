@@ -336,3 +336,8 @@ Let me chronologically analyze the conversation:
 
 2. **Investigation of ghost session**: The user's test (`entire resume soph/te...
 
+### Prompt 54
+
+opencode session delete should not fail if the session is not found, right now entire resume fails with:
+Error: Session not found
+
