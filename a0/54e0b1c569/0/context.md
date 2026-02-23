@@ -97,3 +97,65 @@ Session: ses_383c481e0ffeUtj1irFkrVf4Fe
 
 This is what a resume command outputs, but you have a good point, the "Writing to:" makes no sense, we should remove that. Checking if the resume worked is tricky, we could run "o...
 
+### Prompt 16
+
+=== NAME  TestE2E_ExistingFiles_SplitCommits
+    scenario_checkpoint_workflows_test.go:866: Committing model.go
+    scenario_checkpoint_workflows_test.go:871: Committing view.go
+    scenario_checkpoint_workflows_test.go:876: Committing controller.go
+    scenario_checkpoint_workflows_test.go:886: Checkpoints: model=c430c4c043b4, view=f8f3e84b8d80, controller=d9216b149478
+    scenario_checkpoint_workflows_test.go:890: CheckpointSummary not found at c4/30c4c043b4/metadata.json
+    scenario_checkpoi...
+
+### Prompt 17
+
+yes it passed, now I'm going throught the rest of the failing, sorr
+
+### Prompt 18
+
+yes, please invesitage
+
+### Prompt 19
+
+passes now
+
+### Prompt 20
+
+let's do 1
+
+### Prompt 21
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. **Initial Problem**: User shared a failing E2E test `TestE2E_ResumeInRelocatedRepo` with OpenCode. The error showed it was looking for a session directory at Claude Code's path (`~/.claude/projects/...`) but the test was running with OpenCode which stores sessions differently.
+
+2. **...
+
+### Prompt 22
+
+I think this is the last failure: 
+
+=== NAME  TestE2E_Scenario3_MultipleGranularCommits
+    scenario_checkpoint_workflows_test.go:55: Agent output: I'll help you create these files and make commits for each one. Let me start by planning the tasks.
+        Now let me create file1.go and make the first commit.
+        Now let me create file2.go and make the second commit.
+        Now let me create file3.go and make the final commit.
+        Perfect! I've successfully completed all three tasks:
+
+  ...
+
+### Prompt 23
+
+hmm, but then the script is missing the steps until the commit?
+
+### Prompt 24
+
+this is basically the fix from https://github.com/entireio/cli/pull/466 right?
+
+### Prompt 25
+
+yes revert
+
