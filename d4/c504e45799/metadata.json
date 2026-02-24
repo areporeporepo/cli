@@ -2,9 +2,10 @@
   "cli_version": "dev",
   "checkpoint_id": "d4c504e45799",
   "strategy": "manual-commit",
-  "branch": "gtrrz-victor/opencode-detect-process-exit",
+  "branch": "soph/opencode-refactor-e2e",
   "checkpoints_count": 2,
   "files_touched": [
+    ".github/workflows/e2e.yml",
     "cmd/entire/cli/agent/opencode/entire_plugin.ts"
   ],
   "sessions": [

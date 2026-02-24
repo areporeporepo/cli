@@ -3,11 +3,11 @@
   "checkpoint_id": "d4c504e45799",
   "session_id": "42a7f757-4cbd-4dcf-9d16-8580371b77d3",
   "strategy": "manual-commit",
-  "created_at": "2026-02-23T02:29:17.748944Z",
-  "branch": "gtrrz-victor/opencode-detect-process-exit",
+  "created_at": "2026-02-24T00:26:40.964719Z",
+  "branch": "soph/opencode-refactor-e2e",
   "checkpoints_count": 0,
   "files_touched": [
-    "cmd/entire/cli/agent/opencode/entire_plugin.ts"
+    ".github/workflows/e2e.yml"
   ],
   "agent": "Claude Code",
   "turn_id": "b4483d32e325",
@@ -21,12 +21,12 @@
     "api_call_count": 267
   },
   "initial_attribution": {
-    "calculated_at": "2026-02-23T02:29:16.59556Z",
-    "agent_lines": 56,
-    "human_added": 159,
+    "calculated_at": "2026-02-24T00:26:39.77025Z",
+    "agent_lines": 10,
+    "human_added": 3480,
     "human_modified": 0,
     "human_removed": 0,
-    "total_committed": 215,
-    "agent_percentage": 26.046511627906977
+    "total_committed": 3490,
+    "agent_percentage": 0.28653295128939826
   }
 }
