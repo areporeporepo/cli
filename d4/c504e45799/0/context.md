@@ -15,7 +15,7 @@ The auto-commit strategy is no longer needed and should be removed from the code
 - Eliminating 2,500+ lines of implementation and test code
 - Reducing maintenance burden for a strategy that's not being used
 - Simplifying documentation and user guidance
-- Removing complexity fr...
+- Removing complexity from ...
 
 ### Prompt 2
 
@@ -37,7 +37,7 @@ Analysis:
 This conversation involved a comprehensive removal of the auto-commit strategy from a Go-based CLI codebase. Let me trace through the key events:
 
 1. The user provided a detailed implementation plan with 6 phases for removing auto-commit
-2. I executed the deletion of core files, implementation of settings migration, and updates to a...
+2. I executed the deletion of core files, implementation of settings migration, and updates to all ...
 
 ### Prompt 6
 
