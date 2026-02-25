@@ -1,19 +1,12 @@
 {
   "cli_version": "dev",
   "checkpoint_id": "43cdf4753c06",
+  "session_id": "test",
   "strategy": "manual-commit",
+  "created_at": "2026-02-25T16:16:06.318881Z",
   "branch": "soph/add-absolute-hook-path-option",
-  "checkpoints_count": 7,
+  "checkpoints_count": 0,
   "files_touched": [
-    "cmd/entire/cli/bench_enable_test.go",
-    "cmd/entire/cli/settings/settings.go",
-    "cmd/entire/cli/setup.go",
-    "cmd/entire/cli/setup_test.go",
-    "cmd/entire/cli/strategy/common.go",
-    "cmd/entire/cli/strategy/hook_managers.go",
-    "cmd/entire/cli/strategy/hook_managers_test.go",
-    "cmd/entire/cli/strategy/hooks.go",
-    "cmd/entire/cli/strategy/hooks_test.go",
     "e2e/artifacts/2026-02-24T15-40-34/TestAgentCommitsMidTurnUserCommitsRemainder-claude-code/FAIL",
     "e2e/artifacts/2026-02-24T15-40-34/TestAgentCommitsMidTurnUserCommitsRemainder-claude-code/console.log",
     "e2e/artifacts/2026-02-24T15-40-34/TestAgentCommitsMidTurnUserCommitsRemainder-claude-code/entire-logs/entire.log",
@@ -901,27 +894,15 @@
     "e2e/artifacts/2026-02-24T16-27-57/TestSplitModificationsToExistingFiles-claude-code/git-tree.txt",
     "e2e/artifacts/2026-02-24T16-27-57/entire-version.txt"
   ],
-  "sessions": [
-    {
-      "metadata": "/43/cdf4753c06/0/metadata.json",
-      "transcript": "/43/cdf4753c06/0/full.jsonl",
-      "context": "/43/cdf4753c06/0/context.md",
-      "content_hash": "/43/cdf4753c06/0/content_hash.txt",
-      "prompt": "/43/cdf4753c06/0/prompt.txt"
-    },
-    {
-      "metadata": "/43/cdf4753c06/1/metadata.json",
-      "transcript": "/43/cdf4753c06/1/full.jsonl",
-      "context": "",
-      "content_hash": "/43/cdf4753c06/1/content_hash.txt",
-      "prompt": ""
-    }
-  ],
-  "token_usage": {
-    "input_tokens": 138,
-    "cache_creation_tokens": 325225,
-    "cache_read_tokens": 14495597,
-    "output_tokens": 4170,
-    "api_call_count": 120
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "cf7257a0468a",
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T16:16:06.290755Z",
+    "agent_lines": 14454,
+    "human_added": 13930,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 28384,
+    "agent_percentage": 50.92305524239008
   }
 }
