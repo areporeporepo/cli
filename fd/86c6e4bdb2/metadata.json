@@ -1,0 +1,26 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "fd86c6e4bdb2",
+  "strategy": "manual-commit",
+  "branch": "20260226-paul-fix-explain-contexts",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/explain.go",
+    "cmd/entire/cli/explain_test.go",
+    "cmd/entire/cli/strategy/cleanup.go",
+    "cmd/entire/cli/strategy/common.go",
+    "cmd/entire/cli/strategy/manual_commit_attribution.go",
+    "cmd/entire/cli/strategy/manual_commit_attribution_test.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_rewind.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/fd/86c6e4bdb2/0/metadata.json",
+      "transcript": "/fd/86c6e4bdb2/0/full.jsonl",
+      "context": "",
+      "content_hash": "/fd/86c6e4bdb2/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
