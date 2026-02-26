@@ -329,3 +329,7 @@ yeah #527 has still the issue with mid turn commits, can we go to that branch an
 ---
 
 why is in lifecycle.go:22 the ctx needed?
+
+---
+
+hmm, I just tried it and a prompt that does a change and commits is not working anymore, it worked before, what did we miss?
