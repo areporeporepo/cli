@@ -3,7 +3,7 @@
   "checkpoint_id": "7132c7b6328a",
   "strategy": "manual-commit",
   "branch": "squash-merge-resume",
-  "checkpoints_count": 6,
+  "checkpoints_count": 7,
   "files_touched": [
     "cmd/entire/cli/resume.go",
     "cmd/entire/cli/resume_test.go"
@@ -22,6 +22,13 @@
       "context": "/71/32c7b6328a/1/context.md",
       "content_hash": "/71/32c7b6328a/1/content_hash.txt",
       "prompt": "/71/32c7b6328a/1/prompt.txt"
+    },
+    {
+      "metadata": "/71/32c7b6328a/2/metadata.json",
+      "transcript": "/71/32c7b6328a/2/full.jsonl",
+      "context": "",
+      "content_hash": "/71/32c7b6328a/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
