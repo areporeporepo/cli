@@ -1,0 +1,26 @@
+{
+  "cli_version": "v0.4.7-141-g2db3e1736",
+  "checkpoint_id": "e731a9cc5018",
+  "strategy": "manual-commit",
+  "branch": "alex/more-e2e-fixes",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "e2e/agents/tmux.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e7/31a9cc5018/0/metadata.json",
+      "transcript": "/e7/31a9cc5018/0/full.jsonl",
+      "context": "/e7/31a9cc5018/0/context.md",
+      "content_hash": "/e7/31a9cc5018/0/content_hash.txt",
+      "prompt": "/e7/31a9cc5018/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 80,
+    "cache_creation_tokens": 311070,
+    "cache_read_tokens": 4526632,
+    "output_tokens": 10366,
+    "api_call_count": 64
+  }
+}
