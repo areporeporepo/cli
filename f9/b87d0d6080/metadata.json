@@ -5,8 +5,7 @@
   "branch": "rwr/fix-cursor-cli",
   "checkpoints_count": 2,
   "files_touched": [
-    "cmd/entire/cli/agent/cursor/lifecycle.go",
-    "cmd/entire/cli/agent/cursor/types.go"
+    "cmd/entire/cli/agent/cursor/lifecycle.go"
   ],
   "sessions": [
     {
