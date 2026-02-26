@@ -1,0 +1,19 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "64597ed00591",
+  "strategy": "manual-commit",
+  "branch": "updateCLIStrategies",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/setup.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/64/597ed00591/0/metadata.json",
+      "transcript": "/64/597ed00591/0/full.jsonl",
+      "context": "",
+      "content_hash": "/64/597ed00591/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
