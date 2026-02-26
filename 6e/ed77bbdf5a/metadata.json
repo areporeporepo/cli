@@ -3,7 +3,7 @@
   "checkpoint_id": "6eed77bbdf5a",
   "strategy": "manual-commit",
   "branch": "updateCLIStrategies",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "cmd/entire/cli/settings/settings.go",
     "cmd/entire/cli/setup.go"
@@ -15,6 +15,13 @@
       "context": "/6e/ed77bbdf5a/0/context.md",
       "content_hash": "/6e/ed77bbdf5a/0/content_hash.txt",
       "prompt": "/6e/ed77bbdf5a/0/prompt.txt"
+    },
+    {
+      "metadata": "/6e/ed77bbdf5a/1/metadata.json",
+      "transcript": "/6e/ed77bbdf5a/1/full.jsonl",
+      "context": "",
+      "content_hash": "/6e/ed77bbdf5a/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
