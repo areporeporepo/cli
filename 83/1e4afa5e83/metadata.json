@@ -1,0 +1,19 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "831e4afa5e83",
+  "strategy": "manual-commit",
+  "branch": "squash-merge-resume",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/resume.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/83/1e4afa5e83/0/metadata.json",
+      "transcript": "/83/1e4afa5e83/0/full.jsonl",
+      "context": "",
+      "content_hash": "/83/1e4afa5e83/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
