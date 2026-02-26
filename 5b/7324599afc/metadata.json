@@ -1,0 +1,21 @@
+{
+  "cli_version": "v0.4.7-214-gfa6ba6ead",
+  "checkpoint_id": "5b7324599afc",
+  "strategy": "manual-commit",
+  "branch": "soph/make-dash-dash-version-working",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/checkpoint/temporary.go",
+    "cmd/entire/cli/root.go",
+    "cmd/entire/cli/root_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/5b/7324599afc/0/metadata.json",
+      "transcript": "/5b/7324599afc/0/full.jsonl",
+      "context": "",
+      "content_hash": "/5b/7324599afc/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
