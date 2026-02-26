@@ -1,0 +1,33 @@
+{
+  "cli_version": "v0.4.7-59-g6588fad7-dirty",
+  "checkpoint_id": "f7a9907f2f22",
+  "strategy": "manual-commit",
+  "branch": "improve-context-management",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/checkpoint/tree_surgery_equiv_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f7/a9907f2f22/0/metadata.json",
+      "transcript": "/f7/a9907f2f22/0/full.jsonl",
+      "context": "/f7/a9907f2f22/0/context.md",
+      "content_hash": "/f7/a9907f2f22/0/content_hash.txt",
+      "prompt": "/f7/a9907f2f22/0/prompt.txt"
+    },
+    {
+      "metadata": "/f7/a9907f2f22/1/metadata.json",
+      "transcript": "/f7/a9907f2f22/1/full.jsonl",
+      "context": "/f7/a9907f2f22/1/context.md",
+      "content_hash": "/f7/a9907f2f22/1/content_hash.txt",
+      "prompt": "/f7/a9907f2f22/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 3077,
+    "cache_creation_tokens": 674010,
+    "cache_read_tokens": 31080016,
+    "output_tokens": 19753,
+    "api_call_count": 277
+  }
+}
