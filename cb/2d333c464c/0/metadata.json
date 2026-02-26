@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "cb2d333c464c",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T14:42:23.057113Z",
+  "branch": "rwr/fix-cursor-docs-2",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/cursor/cursor.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "2439f23ce902",
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T14:42:23.056598Z",
+    "agent_lines": 0,
+    "human_added": 14,
+    "human_modified": 8,
+    "human_removed": 0,
+    "total_committed": 18,
+    "agent_percentage": 0
+  }
+}
