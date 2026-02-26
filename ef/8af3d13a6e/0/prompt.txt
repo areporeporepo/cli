@@ -1923,3 +1923,7 @@ ok let's see what this looks like
 now, at the very end of the test report, just before the version information - can we make it _really_ obvious if there's a success?
 
 the failure is reasonably obvious with the exit fatal but we can also say something in that case
+
+---
+
+make it RED and GEEN
