@@ -1,0 +1,32 @@
+{
+  "cli_version": "v0.4.7-222-g15c46863-dirty",
+  "checkpoint_id": "90b21910730c",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T06:05:36.924405Z",
+  "branch": "gtrrz-victor/cursor-export-import-sessions",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/agent.go",
+    "cmd/entire/cli/agent/cursor/chatexport.go",
+    "cmd/entire/cli/agent/cursor/checkpoint.go",
+    "cmd/entire/cli/checkpoint/checkpoint.go",
+    "cmd/entire/cli/checkpoint/committed.go",
+    "cmd/entire/cli/cursor_export.go",
+    "cmd/entire/cli/cursor_import.go",
+    "cmd/entire/cli/lifecycle.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_types.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "1353f37cc43a",
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T06:05:36.923845Z",
+    "agent_lines": 301,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 301,
+    "agent_percentage": 100
+  }
+}
