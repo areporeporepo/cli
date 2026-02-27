@@ -1,0 +1,19 @@
+why is mise printing "Tasks" when using the `mise run` cli picker?
+
+---
+
+all good, just wanted to check we hadn't done something daft.
+
+Last thing - need to update the README with the run:e2e change - we now take agent as a --agent param not the task name directly
+
+---
+
+also gemini isn't strictly sequential, is just parallel limited
+
+---
+
+is it clear that TestFoo is not the real test name?
+
+---
+
+commit and push
