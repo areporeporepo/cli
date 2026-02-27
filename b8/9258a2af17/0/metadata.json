@@ -1,0 +1,30 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "b89258a2af17",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T10:11:35.699373Z",
+  "branch": "gtrrz-victor/replace-fmt-with-log-inside-agent-hooks",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/agent_test.go",
+    "cmd/entire/cli/agent/chunking_test.go",
+    "cmd/entire/cli/agent/registry_test.go",
+    "cmd/entire/cli/agent/types/agent.go",
+    "cmd/entire/cli/benchutil/benchutil.go",
+    "cmd/entire/cli/lifecycle_test.go",
+    "cmd/entire/cli/status_test.go",
+    "cmd/entire/cli/strategy/manual_commit_test.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "2439f23ce902",
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T10:11:35.698737Z",
+    "agent_lines": 126,
+    "human_added": 1605,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 1731,
+    "agent_percentage": 7.279029462738301
+  }
+}

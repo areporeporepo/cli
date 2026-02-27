@@ -1,0 +1,26 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "b89258a2af17",
+  "strategy": "manual-commit",
+  "branch": "gtrrz-victor/replace-fmt-with-log-inside-agent-hooks",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/agent_test.go",
+    "cmd/entire/cli/agent/chunking_test.go",
+    "cmd/entire/cli/agent/registry_test.go",
+    "cmd/entire/cli/agent/types/agent.go",
+    "cmd/entire/cli/benchutil/benchutil.go",
+    "cmd/entire/cli/lifecycle_test.go",
+    "cmd/entire/cli/status_test.go",
+    "cmd/entire/cli/strategy/manual_commit_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b8/9258a2af17/0/metadata.json",
+      "transcript": "/b8/9258a2af17/0/full.jsonl",
+      "context": "",
+      "content_hash": "/b8/9258a2af17/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
