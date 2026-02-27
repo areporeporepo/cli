@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "f6f13afacc0a",
+  "strategy": "manual-commit",
+  "branch": "fix/reconcile-disconnected-metadata-branch",
+  "checkpoints_count": 4,
+  "files_touched": [
+    "cmd/entire/cli/strategy/common.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/f6/f13afacc0a/0/metadata.json",
+      "transcript": "/f6/f13afacc0a/0/full.jsonl",
+      "context": "/f6/f13afacc0a/0/context.md",
+      "content_hash": "/f6/f13afacc0a/0/content_hash.txt",
+      "prompt": "/f6/f13afacc0a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 538,
+    "cache_creation_tokens": 169160,
+    "cache_read_tokens": 21117073,
+    "output_tokens": 57670,
+    "api_call_count": 189
+  }
+}
