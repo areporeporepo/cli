@@ -1,0 +1,23 @@
+{
+  "cli_version": "v0.4.7-221-gacfa2b49-dirty",
+  "checkpoint_id": "eaa0252e405c",
+  "strategy": "manual-commit",
+  "branch": "gtrrz-victor/cursor-export-import-sessions",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/cursor_export.go",
+    "cmd/entire/cli/cursor_import.go",
+    "cmd/entire/cli/root.go",
+    "go.mod",
+    "go.sum"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ea/a0252e405c/0/metadata.json",
+      "transcript": "/ea/a0252e405c/0/full.jsonl",
+      "context": "",
+      "content_hash": "/ea/a0252e405c/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
