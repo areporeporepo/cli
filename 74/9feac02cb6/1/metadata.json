@@ -1,0 +1,25 @@
+{
+  "cli_version": "v0.4.7-193-g1f8339c1",
+  "checkpoint_id": "749feac02cb6",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T03:25:54.202241Z",
+  "branch": "gtrrz-victor/fix-commit-message-cursor-shadow-branch",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/commit_message.go",
+    "cmd/entire/cli/commit_message_test.go",
+    "cmd/entire/cli/lifecycle.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "1353f37cc43a",
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T03:25:54.201714Z",
+    "agent_lines": 177,
+    "human_added": 26823,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 27000,
+    "agent_percentage": 0.6555555555555556
+  }
+}

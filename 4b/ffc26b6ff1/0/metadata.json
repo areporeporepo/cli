@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "4bffc26b6ff1",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T05:49:49.302829Z",
+  "branch": "updateCLIStrategies",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/strategy/manual_commit_hooks.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "c2764ab93e88",
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T05:49:49.302173Z",
+    "agent_lines": 32,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 32,
+    "agent_percentage": 100
+  }
+}
