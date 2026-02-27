@@ -3,7 +3,7 @@
   "checkpoint_id": "b5f7be498652",
   "strategy": "manual-commit",
   "branch": "alex/fix-failing-gemini-e2e",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "cmd/entire/cli/lifecycle.go",
     "cmd/entire/cli/lifecycle_test.go",
@@ -16,6 +16,13 @@
       "context": "/b5/f7be498652/0/context.md",
       "content_hash": "/b5/f7be498652/0/content_hash.txt",
       "prompt": "/b5/f7be498652/0/prompt.txt"
+    },
+    {
+      "metadata": "/b5/f7be498652/1/metadata.json",
+      "transcript": "/b5/f7be498652/1/full.jsonl",
+      "context": "",
+      "content_hash": "/b5/f7be498652/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
