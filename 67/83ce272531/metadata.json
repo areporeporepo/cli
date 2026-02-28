@@ -3,7 +3,7 @@
   "checkpoint_id": "6783ce272531",
   "strategy": "manual-commit",
   "branch": "cleanup/remove-tracked-worktree",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "cmd/entire/cli/benchutil/bench_test.go",
     "cmd/entire/cli/benchutil/parse_tree_bench_test.go"
@@ -15,6 +15,13 @@
       "context": "/67/83ce272531/0/context.md",
       "content_hash": "/67/83ce272531/0/content_hash.txt",
       "prompt": "/67/83ce272531/0/prompt.txt"
+    },
+    {
+      "metadata": "/67/83ce272531/1/metadata.json",
+      "transcript": "/67/83ce272531/1/full.jsonl",
+      "context": "",
+      "content_hash": "/67/83ce272531/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
