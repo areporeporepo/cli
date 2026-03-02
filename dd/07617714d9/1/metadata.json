@@ -1,0 +1,24 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "dd07617714d9",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T18:12:57.300458Z",
+  "branch": "soph/stale-session-fixes",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/session/phase.go",
+    "cmd/entire/cli/session/phase_test.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "6ac6570d2dfb",
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T18:12:57.300111Z",
+    "agent_lines": 15,
+    "human_added": 48,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 63,
+    "agent_percentage": 23.809523809523807
+  }
+}
