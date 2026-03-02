@@ -1,0 +1,26 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "25ed27c671e6",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T14:57:26.637326Z",
+  "branch": "soph/two-turn-different-files",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/integration_test/mid_session_commit_test.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/phase_postcommit_test.go",
+    "e2e/tests/mid_turn_commit_test.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "6ac6570d2dfb",
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T14:57:26.636917Z",
+    "agent_lines": 603,
+    "human_added": 8094,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 8697,
+    "agent_percentage": 6.9334253190755435
+  }
+}

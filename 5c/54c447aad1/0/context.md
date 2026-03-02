@@ -1,0 +1,24 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+let's remove ENTIRE_TEST_TTY=0 from E2E tests, it's hidding an actual issue
+
+### Prompt 2
+
+[Request interrupted by user]
+
+### Prompt 3
+
+or wait, let's make sure we are not setting it when an agent is called, but only when we do manual commits. Like no agent session should run with "ENTIRE_TEST_TTY=0" because that hides any issues if the agent isn't disabling TTY and we have no proper handling for that
+
+### Prompt 4
+
+can you tell me if I could use the github cli to dispatch a actions worklfow that has manual_dispatch set?
+
+### Prompt 5
+
+This removes forcing ENTIRE_TEST_TTY=0, but NewTmuxSession will still inherit any ENTIRE_TEST_TTY already present in the parent environment (and RunPrompt uses os.Environ() as-is). To keep E2E runs hermetic and ensure the agents exercise the real GEMINI_CLI / GIT_TERMINAL_PROMPT behavior, consider explicitly unsetting ENTIRE_TEST_TTY for agent execution (e.g., add it to the unsetEnv list for tmux sessions and filter it out of the env slice for non-tmux runs).
+
