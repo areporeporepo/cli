@@ -151,3 +151,46 @@ we don't have a unit test to cover the lifecycle change?
 
 commit, but it looks like our interactive e2e's are still busted
 
+### Prompt 24
+
+Base directory for this skill: /Users/alex/workspace/cli/.worktrees/3/.claude/skills/debug-e2e
+
+# Debug Entire CLI via E2E Artifacts
+
+Diagnose Entire CLI bugs using captured artifacts from the E2E test suite. Artifacts are written to `e2e/artifacts/` locally or downloaded from CI via GitHub Actions.
+
+## Inputs
+
+The user provides either:
+- **A test run directory:** `e2e/artifacts/{timestamp}/` — triage all failures
+- **A specific test directory:** `e2e/artifacts/{timestamp}/{TestName}-{agent}/...
+
+### Prompt 25
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me trace through this conversation chronologically:
+
+1. **Context from previous sessions**: This is a continuation of a Copilot CLI agent integration. Phases 1-3 were completed and committed. A draft PR #570 was created. E2E tests revealed failures that needed fixing.
+
+2. **Previous session summary**: The previous session identi...
+
+### Prompt 26
+
+Generate a PR title and description based on the work done in this session. 
+
+  Instructions:
+  1. Review the conversation history to understand:
+     - What the user asked for
+     - What was implemented
+     - Key decisions and trade-offs made
+     - Any issues encountered and how they were resolved
+
+  2. Run `git diff main...HEAD` to confirm the actual file changes
+
+  3. Generate:
+     - A concise PR title (50-72 chars, imperative mood)
+     - A PR description (use markdown) with:
+       -...
+

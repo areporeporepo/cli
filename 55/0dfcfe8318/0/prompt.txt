@@ -950,3 +950,379 @@ we don't have a unit test to cover the lifecycle change?
 ---
 
 commit, but it looks like our interactive e2e's are still busted
+
+---
+
+Base directory for this skill: /Users/alex/workspace/cli/.worktrees/3/.claude/skills/debug-e2e
+
+# Debug Entire CLI via E2E Artifacts
+
+Diagnose Entire CLI bugs using captured artifacts from the E2E test suite. Artifacts are written to `e2e/artifacts/` locally or downloaded from CI via GitHub Actions.
+
+## Inputs
+
+The user provides either:
+- **A test run directory:** `e2e/artifacts/{timestamp}/` — triage all failures
+- **A specific test directory:** `e2e/artifacts/{timestamp}/{TestName}-{agent}/` — debug one test
+
+## Artifact Layout
+
+```
+e2e/artifacts/{timestamp}/
+├── report.nocolor.txt          # Pass/fail/skip summary with error lines
+├── test-events.json            # Raw Go test events (NDJSON)
+├── entire-version.txt          # CLI version under test
+└── {TestName}-{agent}/
+    ├── PASS or FAIL            # Status marker
+    ├── console.log             # Full operation transcript
+    ├── git-log.txt             # git log --decorate --graph --all
+    ├── git-tree.txt            # ls-tree HEAD + checkpoint branch
+    ├── entire-logs/entire.log  # CLI structured JSON logs
+    ├── checkpoint-metadata/    # Checkpoint + session metadata
+    └── repo -> /tmp/...        # Symlink to preserved repo (E2E_KEEP_REPOS=1 only)
+```
+
+## Preserved Repo
+
+When the test run was executed with `E2E_KEEP_REPOS=1`, each test's artifact directory contains a `repo` symlink pointing to the preserved temporary git repository. This is the actual repo the test operated on — you can inspect it directly.
+
+**Navigate via the symlink** (e.g., `{artifact-dir}/repo/`) rather than resolving the `/tmp/...` path. The symlink lives inside the artifact directory so permissions and paths stay consistent.
+
+The preserved repo contains:
+- Full git history with all branches (main, `entire/checkpoints/v1`)
+- The `.entire/` directory with CLI state, config, and raw logs
+- The `.claude/` directory (if Claude Code was the agent)
+- All files the agent created or modified, in their final state
+
+This is the most powerful debugging tool — you can run `git log`, `git diff`, `git show`, inspect `.entire/` internals, and see exactly what the CLI left behind.
+
+## Debugging Workflow
+
+### 1. Triage (if given a run directory)
+
+Read `report.nocolor.txt` to identify failures and their error messages. Each entry shows the test name, agent, duration, and failure output with file:line references.
+
+### 2. Read console.log (most important)
+
+Full transcript of every operation:
+- `> claude -p "..." ...` — agent prompts with stdout/stderr
+- `> git add/commit/...` — git commands
+- `> send: ...` — interactive session inputs
+
+This tells you what happened chronologically.
+
+### 3. Read test source code
+
+Use the file:line from the report to find the test in `e2e/tests/`. Understand what the test expected to happen vs what console.log shows actually happened.
+
+### 4. Diagnose the CLI behavior
+
+Cross-reference console.log (what happened) with the test (what should have happened). Focus on CLI-level issues:
+
+| Symptom | CLI Investigation |
+|---------|-------------------|
+| Checkpoint not created / timeout | Check `entire-logs/entire.log` for hook invocations, phase transitions, errors |
+| Wrong checkpoint content | Check `git-tree.txt` for checkpoint branch files, `checkpoint-metadata/` for session info |
+| Hooks didn't fire | Check `entire.log` for missing hook entries (session-start, user-prompt-submit, stop, post-commit) |
+| Stash/unstash problems | Check `entire.log` for stash-related log lines, `git-log.txt` for commit ordering |
+| Attribution issues | Check `checkpoint-metadata/` for `files_touched`, session metadata for attribution data |
+| Strategy mismatch | Check `entire.log` for `strategy` field, verify auto-commit vs manual-commit behavior |
+
+### 5. Deep dive files
+
+- **entire-logs/entire.log**: Structured JSON logs — hook lifecycle, session phases (`active` → `idle` → `ended`), warnings, errors. Key fields: `component`, `hook`, `strategy`, `session_id`.
+- **git-log.txt**: Commit graph showing main branch, `entire/checkpoints/v1`, checkpoint initialization.
+- **git-tree.txt**: Files at HEAD vs checkpoint branch (separated by `--- entire/checkpoints/v1 ---`).
+- **checkpoint-metadata/**: `metadata.json` has `checkpoint_id`, `strategy`, `files_touched`, `token_usage`, and `sessions` array. Session subdirs have per-session details.
+
+### 6. Report findings
+
+Identify whether the issue is in:
+- **CLI hooks** (prepare-commit-msg, commit-msg, post-commit)
+- **Session management** (phase transitions, session tracking)
+- **Checkpoint creation** (branch management, metadata writing)
+- **Attribution** (file tracking, prompt correlation)
+- **Strategy logic** (auto-commit vs manual-commit behavior)
+
+
+ARGUMENTS: e2e/artifacts/2026-03-02T17-02-43
+
+---
+
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+Analysis:
+Let me trace through this conversation chronologically:
+
+1. **Context from previous sessions**: This is a continuation of a Copilot CLI agent integration. Phases 1-3 were completed and committed. A draft PR #570 was created. E2E tests revealed failures that needed fixing.
+
+2. **Previous session summary**: The previous session identified two issues:
+   - Shadow branch not cleaned up in `TestSingleSessionSubagentCommitInTurn` due to missing SubagentStart hook
+   - The fix (pre-prompt state fallback) was implemented and verified via E2E
+   - Experimental `subagent-start` hook registration was added (confirmed it doesn't fire)
+   - Nothing was committed yet
+
+3. **This session started** with the task to continue from where the previous session left off. The assistant:
+   - Read the relevant files to understand current state
+   - Removed experimental `subagent-start` code (since it doesn't fire)
+   - Updated AGENT.md with subagent lifecycle findings
+   - Ran pre-commit checks (fmt, lint, test:ci) - all passed
+
+4. **User asked**: "we don't have a unit test to cover the lifecycle change?"
+
+5. **Assistant initially wrote** integration-level tests that needed a full git repo in `lifecycle_test.go`
+
+6. **User pushed back**: "we can't do this as a unit test? only integration?"
+
+7. **Assistant refactored**: Extracted `resolveTaskPreUntrackedFiles()` helper from `handleLifecycleSubagentEnd` in lifecycle.go, then wrote 4 proper unit tests for the helper:
+   - `TestResolveTaskPreUntrackedFiles_PrefersPreTaskState` (pure unit, parallel)
+   - `TestResolveTaskPreUntrackedFiles_FallsBackToPrePromptState` (needs git repo for path resolution)
+   - `TestResolveTaskPreUntrackedFiles_NilWhenNoStateExists` (pure unit, parallel)
+   - `TestResolveTaskPreUntrackedFiles_NilForEmptySessionID` (pure unit, parallel)
+
+8. **User said**: "commit, but it looks like our interactive e2e's are still busted"
+
+9. **Assistant committed** the fix and tests, then investigated the interactive E2E failures from the `e2e/artifacts/2026-03-02T16-43-03` report:
+   - 5 copilot-cli failures all showing "Confirm folder trust" dialog timeout
+   - 1 gemini-cli failure (separate issue - shadow branch not cleaned)
+
+10. **User said**: "let's actually run an interactive test before declaring victory this time 😅"
+
+11. **Assistant investigated** the folder trust dialog:
+    - No CLI flag to skip it (`--allow-all` only handles tool permissions)
+    - User suggested pre-seeding trust via `--config-dir`
+    - Found that the dialog uses `Enter to select` and `❯ 1. Yes` is pre-selected
+
+12. **First fix attempt**: Added dialog dismissal loop + pattern matching for `>` in `StartSession`
+    - Test failed - the dialog was dismissed but the prompt pattern `>` didn't match `❯`
+
+13. **Second fix attempt**: Changed `PromptPattern()` from `>` to `❯` and updated `StartSession` patterns
+    - Test failed again - "checkpoint branch did not advance within 15s"
+    - Used `/debug-e2e` to investigate
+
+14. **Root cause discovery**: The `entire.log` showed NO lifecycle hooks fired - only git hooks. `prepare-commit-msg` said "no active sessions". The lifecycle hooks (`entire hooks copilot-cli session-start`) weren't executing because:
+    - tmux sessions inherit the tmux SERVER's PATH, not the test process's PATH
+    - The system-wide `entire` binary at `/Users/alex/go/bin/entire` is v0.4.7 (old, no copilot-cli support)
+    - The test's `os.Setenv("PATH", ...)` only affects the test process, not tmux sessions
+
+15. **Final fix**: Forward PATH from test process into tmux sessions via `env PATH=...` in `NewTmuxSession`
+    - `TestInteractiveMultiStep` passed
+    - All 4 other previously failing interactive tests passed
+
+16. **Assistant committed** the E2E fixes
+
+Key commits on branch `alex/add-copilot-agent`:
+1. `6674ca0c0` - Phase 1: Research (previous session)
+2. `e56b14f15` - Phase 2: E2E runner (previous session)
+3. `3e2809521` - Phase 3: Implementation (previous session)
+4. `789dbf7d7` - Fix E2E runner: --allow-all + haiku (previous session)
+5. `fc24fc6b4` - Fix spurious task checkpoints for agents without SubagentStart hook (this session)
+6. `08af2461b` - Fix interactive E2E tests for Copilot CLI (this session)
+
+Draft PR: https://github.com/entireio/cli/pull/570
+
+Summary:
+1. Primary Request and Intent:
+   The user is integrating GitHub Copilot CLI as a new agent in the Entire CLI tool. Phases 1-3 of the agent integration were completed in previous sessions, and a draft PR #570 was created. This session focused on:
+   - Cleaning up experimental `subagent-start` code (confirmed it doesn't fire in Copilot CLI)
+   - Writing unit tests for the pre-prompt state fallback fix in `handleLifecycleSubagentEnd`
+   - Fixing interactive (tmux-based) E2E test failures for Copilot CLI
+   - Committing all fixes with proper pre-commit validation
+
+2. Key Technical Concepts:
+   - **Pre-prompt state fallback**: Agents without a SubagentStart hook (like Copilot CLI) have no pre-task state captured. The fix falls back to the session's pre-prompt state to avoid `DetectFileChanges` treating all untracked files as "new" (creating spurious task checkpoints).
+   - **tmux PATH inheritance**: tmux sessions inherit the tmux SERVER's environment, not the calling client process's environment. The E2E test's `os.Setenv("PATH", ...)` doesn't propagate to tmux sessions.
+   - **Copilot CLI interactive prompt**: Uses `❯` (Unicode U+276F), not `>` (ASCII). The "Confirm folder trust" dialog appears in interactive mode for new directories.
+   - **Copilot CLI hook inventory**: `subagentStop` fires (undocumented), `subagentStart` does NOT fire (confirmed by experiment), `preToolUse`/`postToolUse` with `toolName == "task"` reliably fires for subagent lifecycle.
+   - **System-wide `entire` binary**: `/Users/alex/go/bin/entire` is v0.4.7 which predates Copilot CLI support. This old binary was used by tmux sessions, causing lifecycle hooks to fail silently.
+
+3. Files and Code Sections:
+
+   - **`cmd/entire/cli/lifecycle.go`** (MODIFIED)
+     - Extracted `resolveTaskPreUntrackedFiles()` helper from `handleLifecycleSubagentEnd` for testability
+     - The helper implements the pre-prompt state fallback logic
+     ```go
+     func resolveTaskPreUntrackedFiles(ctx context.Context, preTaskState *PreTaskState, sessionID string) []string {
+         if preTaskState != nil {
+             return preTaskState.PreUntrackedFiles()
+         }
+         if sessionID == "" {
+             return nil
+         }
+         prePromptState, err := LoadPrePromptState(ctx, sessionID)
+         if err != nil {
+             logging.Warn(ctx, "failed to load pre-prompt state as fallback",
+                 slog.String("error", err.Error()))
+             return nil
+         }
+         if prePromptState != nil {
+             logging.Debug(ctx, "using pre-prompt state as fallback for task file detection",
+                 slog.Int("pre_existing_untracked_files", len(prePromptState.UntrackedFiles)))
+             return prePromptState.PreUntrackedFiles()
+         }
+         return nil
+     }
+     ```
+     - In `handleLifecycleSubagentEnd`, replaced inline fallback logic with call to the helper:
+     ```go
+     preUntrackedFiles := resolveTaskPreUntrackedFiles(logCtx, preState, event.SessionID)
+     ```
+
+   - **`cmd/entire/cli/lifecycle_test.go`** (MODIFIED)
+     - Added 4 unit tests for `resolveTaskPreUntrackedFiles`:
+     ```go
+     func TestResolveTaskPreUntrackedFiles_PrefersPreTaskState(t *testing.T)        // parallel, pure unit
+     func TestResolveTaskPreUntrackedFiles_FallsBackToPrePromptState(t *testing.T)  // needs git repo
+     func TestResolveTaskPreUntrackedFiles_NilWhenNoStateExists(t *testing.T)        // parallel, pure unit
+     func TestResolveTaskPreUntrackedFiles_NilForEmptySessionID(t *testing.T)        // parallel, pure unit
+     ```
+     - Added `"encoding/json"` to imports
+
+   - **`cmd/entire/cli/agent/copilotcli/AGENT.md`** (MODIFIED)
+     - Added "Subagent Lifecycle" section documenting: no SubagentStart hook, subagentStop fires undocumented, preToolUse/postToolUse with toolName "task" is alternative mechanism, framework falls back to pre-prompt state
+     - Updated "Gaps & Limitations" section accordingly
+
+   - **`cmd/entire/cli/agent/copilotcli/lifecycle.go`** (MODIFIED then reverted)
+     - Removed experimental `HookNameSubagentStart` constant, `parseSubagentStart` function, and switch case (these were added in the previous session's experiment and confirmed not to fire)
+
+   - **`cmd/entire/cli/agent/copilotcli/hooks.go`** (MODIFIED then reverted)
+     - Removed `HookNameSubagentStart: "subagentStart"` from `hookConfigKey` map
+
+   - **`cmd/entire/cli/agent/copilotcli/types.go`** (MODIFIED then reverted)
+     - Removed `subagentStartRaw` struct
+
+   - **`e2e/agents/tmux.go`** (MODIFIED)
+     - Added `"os"` import
+     - Forward PATH from test process into tmux sessions:
+     ```go
+     // PATH is always forwarded from the current process so that the freshly-built
+     // "entire" binary (prepended to PATH by main_test.go) is available inside the
+     // tmux session. Without this, tmux inherits the server's environment which may
+     // have an older binary (or none at all).
+     var parts []string
+     parts = append(parts, "env", "PATH="+shellQuote(os.Getenv("PATH")))
+     for _, v := range unsetEnv {
+         parts = append(parts, "-u", shellQuote(v))
+     }
+     ```
+
+   - **`e2e/agents/copilot-cli.go`** (MODIFIED)
+     - Changed `PromptPattern()` from `>` to `❯`
+     - Updated `StartSession` with dialog dismissal loop:
+     ```go
+     func (c *CopilotCLI) StartSession(ctx context.Context, dir string) (Session, error) {
+         name := fmt.Sprintf("copilot-test-%d", time.Now().UnixNano())
+         s, err := NewTmuxSession(name, dir, nil, "env", "ENTIRE_TEST_TTY=0", c.Binary(), "--model", "claude-haiku-4.5", "--allow-all")
+         if err != nil {
+             return nil, err
+         }
+         for range 5 {
+             content, err := s.WaitFor(`(❯|Enter to select)`, 30*time.Second)
+             if err != nil {
+                 _ = s.Close()
+                 return nil, fmt.Errorf("waiting for startup prompt: %w", err)
+             }
+             if strings.Contains(content, "❯") && !strings.Contains(content, "Enter to select") {
+                 break
+             }
+             _ = s.SendKeys("Enter")
+             time.Sleep(500 * time.Millisecond)
+         }
+         s.stableAtSend = ""
+         return s, nil
+     }
+     ```
+
+4. Errors and fixes:
+   - **User: "we don't have a unit test to cover the lifecycle change?"**
+     - Initially wrote integration-heavy tests using full git repo setup
+     - User pushed back: "we can't do this as a unit test? only integration?"
+     - Fixed by extracting `resolveTaskPreUntrackedFiles()` helper and writing 4 focused unit tests
+   
+   - **Wrong prompt pattern `>` vs `❯`**:
+     - First fix used `>` which matched text in the trust dialog but not the actual interactive prompt
+     - After dismissing dialog, WaitFor timed out because Copilot CLI uses `❯` (Unicode U+276F)
+     - Fixed by changing `PromptPattern()` to `❯` and updating all WaitFor patterns
+   
+   - **"checkpoint branch did not advance within 15s"**:
+     - After fixing the prompt pattern, session started but no lifecycle hooks fired
+     - Root cause: tmux sessions use the tmux SERVER's PATH which has old `entire` v0.4.7 at `/Users/alex/go/bin/entire` that doesn't know about copilot-cli
+     - `os.Setenv("PATH", ...)` in `main_test.go` only affects the test process, not tmux sessions
+     - Fixed by forwarding PATH via `env PATH=...` in `NewTmuxSession` (tmux.go)
+
+5. Problem Solving:
+   - **Spurious task checkpoints**: Fully resolved by extracting `resolveTaskPreUntrackedFiles()` that falls back to pre-prompt state. Unit tested and verified via E2E.
+   - **Interactive E2E failures**: Three-layer fix — (1) trust dialog dismissal loop, (2) correct Unicode prompt pattern `❯`, (3) PATH forwarding to tmux sessions. All 5 previously failing interactive tests now pass.
+   - **Experimental subagent-start**: Removed cleanly since Copilot CLI confirmed not to fire it.
+
+6. All user messages:
+   - "we don't have a unit test to cover the lifecycle change?"
+   - "we can't do this as a unit test? only integration?"
+   - "commit, but it looks like our interactive e2e's are still busted"
+   - "let's actually run an interactive test before declaring victory this time 😅"
+   - "what happens if we 'remember this folder for future sessions'? could we set a config dir outside, and pre-seed with the permission?"
+
+7. Pending Tasks:
+   - Push changes and update draft PR #570
+   - The gemini-cli `TestPartialStaging` failure (shadow branch not cleaned — separate unrelated issue) was not addressed
+   - Full E2E suite run to confirm all 37 tests pass (only ran copilot-cli subset so far)
+
+8. Current Work:
+   Just committed `08af2461b` "Fix interactive E2E tests for Copilot CLI" which fixes tmux PATH forwarding and Copilot CLI prompt pattern/trust dialog handling. All 5 previously failing interactive tests pass. All unit/integration tests pass.
+
+   Commits on branch `alex/add-copilot-agent`:
+   1. `6674ca0c0` - Phase 1: Research
+   2. `e56b14f15` - Phase 2: E2E runner
+   3. `3e2809521` - Phase 3: Implementation
+   4. `789dbf7d7` - Fix E2E runner: --allow-all + haiku
+   5. `fc24fc6b4` - Fix spurious task checkpoints for agents without SubagentStart hook
+   6. `08af2461b` - Fix interactive E2E tests for Copilot CLI
+
+   Draft PR: https://github.com/entireio/cli/pull/570
+
+9. Optional Next Step:
+   The user said "it looks like our interactive e2e's are still busted" and we fixed them. The logical next step would be to push these commits to the remote and update the PR, or run the full E2E suite across all agents to confirm no regressions. However, the user hasn't explicitly asked for either, so waiting for direction.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/alex/.claude/projects/-Users-alex-workspace-cli--worktrees-3/2335990a-d6c5-4425-96b8-9c47a378a3bd.jsonl
+Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.
+
+---
+
+Generate a PR title and description based on the work done in this session. 
+
+  Instructions:
+  1. Review the conversation history to understand:
+     - What the user asked for
+     - What was implemented
+     - Key decisions and trade-offs made
+     - Any issues encountered and how they were resolved
+
+  2. Run `git diff main...HEAD` to confirm the actual file changes
+
+  3. Generate:
+     - A concise PR title (50-72 chars, imperative mood)
+     - A PR description (use markdown) with:
+       - ## Summary (2-4 bullet points based on what was discussed and implemented)
+       - ## Test plan (how to verify the changes)
+
+  Prioritize the conversation context over just the git diff - the discussion captures the "why" and intent, not just the "what".
+
+  Format the output as markdown:
+  
+```
+  Title:
+
+  # Summary
+
+  - <bullet 1>
+  - <bullet 2>
+
+---
+
+  # Test plan
+
+  - <step 1>
+  - <step 2>
+```
+
+  Do not create any files or make any changes. Just output the PR title and description.
