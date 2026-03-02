@@ -1,0 +1,14 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+compare my approach in cmd/entire/cli/strategy/metadata_reconcile.go with what happens during the pre-push hook. 
+
+the pre-push build of the tree, seems to be very very low level. help me understand the advantaegs and differences
+
+### Prompt 2
+
+push as a new pr in draft
+
