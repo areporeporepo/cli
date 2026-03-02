@@ -3,7 +3,7 @@
   "checkpoint_id": "4cb9291bb58a",
   "strategy": "manual-commit",
   "branch": "feat/trails",
-  "checkpoints_count": 2,
+  "checkpoints_count": 3,
   "files_touched": [
     "cmd/entire/cli/strategy/manual_commit_hooks.go",
     "cmd/entire/cli/trail_cmd.go"
@@ -15,6 +15,13 @@
       "context": "/4c/b9291bb58a/0/context.md",
       "content_hash": "/4c/b9291bb58a/0/content_hash.txt",
       "prompt": "/4c/b9291bb58a/0/prompt.txt"
+    },
+    {
+      "metadata": "/4c/b9291bb58a/1/metadata.json",
+      "transcript": "/4c/b9291bb58a/1/full.jsonl",
+      "context": "",
+      "content_hash": "/4c/b9291bb58a/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
