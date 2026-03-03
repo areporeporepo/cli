@@ -1,0 +1,24 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "4cb9291bb58a",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T19:22:36.198728Z",
+  "branch": "feat/trails",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/trail_cmd.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "f8a6c149bd67",
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T19:22:36.194975Z",
+    "agent_lines": 803,
+    "human_added": 9080,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 9883,
+    "agent_percentage": 8.125063239906911
+  }
+}

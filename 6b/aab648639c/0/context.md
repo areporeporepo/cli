@@ -1,0 +1,26 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Where is this written? Almost there! Add it to your PATH so you can run entire from anywhere.
+
+  Run this, then restart your terminal:
+
+    echo 'export PATH="/home/blink/.local/bin:$PATH"' >> ~/.bashrc
+
+  Then run entire to get started.
+
+### Prompt 2
+
+Let's replace it with: Add entire to your PATH:
+
+    echo 'export PATH="/home/blink/.local/bin:$PATH"' >> ~/.bashrc
+
+  Restart your terminal, then run entire to get started.
+
+### Prompt 3
+
+Create a new branch, commit the changes and create a PR
+

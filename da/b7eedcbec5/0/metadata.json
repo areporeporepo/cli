@@ -1,0 +1,32 @@
+{
+  "cli_version": "v0.4.7-215-g473bd8795",
+  "checkpoint_id": "dab7eedcbec5",
+  "session_id": "37899832-e19a-4557-8f91-56d0067d3b97",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T01:36:43.703568Z",
+  "branch": "alex/agent-architecture-test",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/agent/architecture_test.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "847fae9736b8",
+  "checkpoint_transcript_start": 78,
+  "transcript_lines_at_start": 78,
+  "token_usage": {
+    "input_tokens": 19,
+    "cache_creation_tokens": 25987,
+    "cache_read_tokens": 1422882,
+    "output_tokens": 3553,
+    "api_call_count": 13
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T01:36:43.509981Z",
+    "agent_lines": 0,
+    "human_added": 4,
+    "human_modified": 1,
+    "human_removed": 0,
+    "total_committed": 4,
+    "agent_percentage": 0
+  }
+}
