@@ -1,0 +1,27 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "df64be0355a1",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T15:40:23.859229Z",
+  "branch": "feat/trails",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/checkpoint/committed.go",
+    "cmd/entire/cli/checkpoint/temporary.go",
+    "cmd/entire/cli/trail/store.go",
+    "cmd/entire/cli/trail/store_test.go",
+    "cmd/entire/cli/trail/trail.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "9d6ddd84dd65",
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T15:40:23.858849Z",
+    "agent_lines": 377,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 377,
+    "agent_percentage": 100
+  }
+}
