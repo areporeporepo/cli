@@ -1,0 +1,26 @@
+{
+  "cli_version": "v0.4.9-dev-03ab9832",
+  "checkpoint_id": "d126347d8a95",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T08:40:18.958671Z",
+  "branch": "feat/model-in-session-info",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/factoryaidroid/transcript.go",
+    "cmd/entire/cli/agent/factoryaidroid/transcript_test.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/manual_commit_session.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "a0f43d612631",
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T08:40:18.958254Z",
+    "agent_lines": 28,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 28,
+    "agent_percentage": 100
+  }
+}
