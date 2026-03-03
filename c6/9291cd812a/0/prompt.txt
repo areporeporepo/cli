@@ -366,3 +366,7 @@ Summary:
 
 If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/alex/.claude/projects/-Users-alex-workspace-cli--worktrees-1/993f4b55-d917-4933-8513-05c115a0f7ef.jsonl
 Please continue the conversation from where we left off without asking the user any further questions. Continue with the last task that you were asked to work on.
+
+---
+
+do this with the corresponding tests?

@@ -68,3 +68,7 @@ Let me chronologically analyze the conversation:
    - Step 1: Added `ModelUpdate` event type to `event.go`
    - Step 2: Added `...
 
+### Prompt 12
+
+do this with the corresponding tests?
+
