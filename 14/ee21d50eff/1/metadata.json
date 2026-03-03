@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.9",
+  "checkpoint_id": "14ee21d50eff",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T08:57:21.479956Z",
+  "branch": "fix/reconcile-disconnected-metadata-branch",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/doctor.go",
+    "cmd/entire/cli/strategy/common.go",
+    "cmd/entire/cli/strategy/metadata_reconcile.go",
+    "cmd/entire/cli/strategy/metadata_reconcile_test.go",
+    "cmd/entire/cli/strategy/push_common.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "b1a080066871",
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T08:57:21.47891Z",
+    "agent_lines": 30,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 30,
+    "agent_percentage": 100
+  }
+}
