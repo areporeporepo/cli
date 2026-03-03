@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "008b9c5fcce9",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T15:08:43.947053Z",
+  "branch": "feat/model-in-session-info",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/claudecode/lifecycle_test.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "2439f23ce902",
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T15:08:43.946639Z",
+    "agent_lines": 91,
+    "human_added": 9142,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 9233,
+    "agent_percentage": 0.9855951478392722
+  }
+}
