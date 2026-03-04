@@ -3,7 +3,7 @@
   "checkpoint_id": "684de188aaaa",
   "strategy": "manual-commit",
   "branch": "alisha/kiro-oneshot",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "cmd/entire/cli/agent/agent.go",
     "cmd/entire/cli/agent/event.go",
@@ -24,6 +24,13 @@
       "context": "/68/4de188aaaa/1/context.md",
       "content_hash": "/68/4de188aaaa/1/content_hash.txt",
       "prompt": "/68/4de188aaaa/1/prompt.txt"
+    },
+    {
+      "metadata": "/68/4de188aaaa/2/metadata.json",
+      "transcript": "/68/4de188aaaa/2/full.jsonl",
+      "context": "",
+      "content_hash": "/68/4de188aaaa/2/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
