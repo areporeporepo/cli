@@ -1,0 +1,72 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "30aa8bd9b67f",
+  "strategy": "manual-commit",
+  "branch": "alisha/kiro-oneshot",
+  "checkpoints_count": 3,
+  "files_touched": [
+    ".github/workflows/e2e-isolated.yml",
+    ".github/workflows/e2e.yml",
+    "cmd/entire/cli/agent/event.go",
+    "cmd/entire/cli/agent/kiro/AGENT.md",
+    "cmd/entire/cli/agent/kiro/hooks.go",
+    "cmd/entire/cli/agent/kiro/hooks_test.go",
+    "cmd/entire/cli/agent/kiro/lifecycle.go",
+    "cmd/entire/cli/agent/kiro/lifecycle_test.go",
+    "cmd/entire/cli/agent/kiro/types.go",
+    "e2e/README.md",
+    "e2e/agents/kiro.go",
+    "e2e/agents/kiro_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/30/aa8bd9b67f/0/metadata.json",
+      "transcript": "/30/aa8bd9b67f/0/full.jsonl",
+      "context": "/30/aa8bd9b67f/0/context.md",
+      "content_hash": "/30/aa8bd9b67f/0/content_hash.txt",
+      "prompt": "/30/aa8bd9b67f/0/prompt.txt"
+    },
+    {
+      "metadata": "/30/aa8bd9b67f/1/metadata.json",
+      "transcript": "/30/aa8bd9b67f/1/full.jsonl",
+      "context": "/30/aa8bd9b67f/1/context.md",
+      "content_hash": "/30/aa8bd9b67f/1/content_hash.txt",
+      "prompt": "/30/aa8bd9b67f/1/prompt.txt"
+    },
+    {
+      "metadata": "/30/aa8bd9b67f/2/metadata.json",
+      "transcript": "/30/aa8bd9b67f/2/full.jsonl",
+      "context": "/30/aa8bd9b67f/2/context.md",
+      "content_hash": "/30/aa8bd9b67f/2/content_hash.txt",
+      "prompt": "/30/aa8bd9b67f/2/prompt.txt"
+    },
+    {
+      "metadata": "/30/aa8bd9b67f/3/metadata.json",
+      "transcript": "/30/aa8bd9b67f/3/full.jsonl",
+      "context": "/30/aa8bd9b67f/3/context.md",
+      "content_hash": "/30/aa8bd9b67f/3/content_hash.txt",
+      "prompt": "/30/aa8bd9b67f/3/prompt.txt"
+    },
+    {
+      "metadata": "/30/aa8bd9b67f/4/metadata.json",
+      "transcript": "/30/aa8bd9b67f/4/full.jsonl",
+      "context": "/30/aa8bd9b67f/4/context.md",
+      "content_hash": "/30/aa8bd9b67f/4/content_hash.txt",
+      "prompt": "/30/aa8bd9b67f/4/prompt.txt"
+    },
+    {
+      "metadata": "/30/aa8bd9b67f/5/metadata.json",
+      "transcript": "/30/aa8bd9b67f/5/full.jsonl",
+      "context": "",
+      "content_hash": "/30/aa8bd9b67f/5/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 17608,
+    "cache_creation_tokens": 569643,
+    "cache_read_tokens": 12831759,
+    "output_tokens": 65154,
+    "api_call_count": 140
+  }
+}
