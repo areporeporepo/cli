@@ -1,0 +1,24 @@
+{
+  "cli_version": "v0.4.9-dev-4698d3d4",
+  "checkpoint_id": "2c1af490177c",
+  "strategy": "manual-commit",
+  "branch": "alex/handle-subagent-logs",
+  "checkpoints_count": 1,
+  "files_touched": null,
+  "sessions": [
+    {
+      "metadata": "/2c/1af490177c/0/metadata.json",
+      "transcript": "/2c/1af490177c/0/full.jsonl",
+      "context": "/2c/1af490177c/0/context.md",
+      "content_hash": "/2c/1af490177c/0/content_hash.txt",
+      "prompt": "/2c/1af490177c/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 73,
+    "cache_creation_tokens": 272951,
+    "cache_read_tokens": 6468201,
+    "output_tokens": 38450,
+    "api_call_count": 66
+  }
+}
