@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+can you split the conversion of cursor to using the external agent in a separate commit?
+
