@@ -1,0 +1,16 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+let's remove ENTIRE_TEST_TTY=0 from E2E tests, it's hidding an actual issue
+
+### Prompt 2
+
+[Request interrupted by user]
+
+### Prompt 3
+
+or wait, let's make sure we are not setting it when an agent is called, but only when we do manual commits. Like no agent session should run with "ENTIRE_TEST_TTY=0" because that hides any issues if the agent isn't disabling TTY and we have no proper handling for that
+

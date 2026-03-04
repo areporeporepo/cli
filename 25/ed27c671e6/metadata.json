@@ -1,0 +1,36 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "25ed27c671e6",
+  "strategy": "manual-commit",
+  "branch": "soph/two-turn-different-files",
+  "checkpoints_count": 11,
+  "files_touched": [
+    "cmd/entire/cli/integration_test/mid_session_commit_test.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/phase_postcommit_test.go",
+    "e2e/tests/mid_turn_commit_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/25/ed27c671e6/0/metadata.json",
+      "transcript": "/25/ed27c671e6/0/full.jsonl",
+      "context": "/25/ed27c671e6/0/context.md",
+      "content_hash": "/25/ed27c671e6/0/content_hash.txt",
+      "prompt": "/25/ed27c671e6/0/prompt.txt"
+    },
+    {
+      "metadata": "/25/ed27c671e6/1/metadata.json",
+      "transcript": "/25/ed27c671e6/1/full.jsonl",
+      "context": "",
+      "content_hash": "/25/ed27c671e6/1/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 188,
+    "cache_creation_tokens": 199992,
+    "cache_read_tokens": 17308666,
+    "output_tokens": 49866,
+    "api_call_count": 164
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "cb2d333c464c",
+  "strategy": "manual-commit",
+  "branch": "rwr/fix-cursor-docs-2",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/cursor/cursor.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/cb/2d333c464c/0/metadata.json",
+      "transcript": "/cb/2d333c464c/0/full.jsonl",
+      "context": "",
+      "content_hash": "/cb/2d333c464c/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+can you make the changelog for 0.4.9 based on the changes since 0.4.8
+

@@ -1,0 +1,33 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "eab474b18330",
+  "strategy": "manual-commit",
+  "branch": "gtrrz-victor/replace-fmt-with-log-inside-agent-hooks",
+  "checkpoints_count": 7,
+  "files_touched": [
+    "cmd/entire/cli/agent/token_usage.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ea/b474b18330/0/metadata.json",
+      "transcript": "/ea/b474b18330/0/full.jsonl",
+      "context": "/ea/b474b18330/0/context.md",
+      "content_hash": "/ea/b474b18330/0/content_hash.txt",
+      "prompt": "/ea/b474b18330/0/prompt.txt"
+    },
+    {
+      "metadata": "/ea/b474b18330/1/metadata.json",
+      "transcript": "/ea/b474b18330/1/full.jsonl",
+      "context": "",
+      "content_hash": "/ea/b474b18330/1/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 38,
+    "cache_creation_tokens": 73384,
+    "cache_read_tokens": 1953604,
+    "output_tokens": 495,
+    "api_call_count": 24
+  }
+}

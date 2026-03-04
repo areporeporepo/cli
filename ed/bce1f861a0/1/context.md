@@ -1,0 +1,114 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Base directory for this skill: /Users/alex/workspace/cli/.claude/skills/debug-e2e
+
+# Debug Entire CLI via E2E Artifacts
+
+Diagnose Entire CLI bugs using captured artifacts from the E2E test suite. Artifacts are written to `e2e/artifacts/` locally or downloaded from CI via GitHub Actions.
+
+## Inputs
+
+The user provides either:
+- **A test run directory:** `e2e/artifacts/{timestamp}/` — triage all failures
+- **A specific test directory:** `e2e/artifacts/{timestamp}/{TestName}-{agent}/` — debug one...
+
+### Prompt 2
+
+[Request interrupted by user for tool use]
+
+### Prompt 3
+
+try again now the report should be there
+
+### Prompt 4
+
+[Request interrupted by user]
+
+### Prompt 5
+
+you should know I've just run these against a branch build of the cli
+
+the auto commit failure is expected
+
+### Prompt 6
+
+have a look at the test.json - was there any clues in the pane output?
+
+### Prompt 7
+
+in interactive mode? yes it would
+
+Q: does this test use entire 'manual' mode?
+
+### Prompt 8
+
+yes, do both - after each WaitFor and in cleanup
+
+### Prompt 9
+
+commit this
+
+### Prompt 10
+
+I guess it was a flake? the last run only has the autocommit failure yes?
+
+### Prompt 11
+
+check the new run I've just done
+
+### Prompt 12
+
+pane.txt is empty though, can we capture it before session.Close?
+
+### Prompt 13
+
+are we committed? we have conflicts with upstream
+
+### Prompt 14
+
+I've reverted my change. let's rebase
+
+### Prompt 15
+
+do it
+
+### Prompt 16
+
+run the tests to make sure the rebase is clean
+
+### Prompt 17
+
+push
+
+### Prompt 18
+
+ah, we have to remove the --strategy flags from our entire calls in e2e tests
+
+### Prompt 19
+
+push, then trigger the E2E workflow please
+
+### Prompt 20
+
+we have more feedback about the shadow branches being left behind - can we do a post-check in all of our scenarios (where we don't expect to have them). It seems like it's a common failure mode for us.
+
+### Prompt 21
+
+Summary of fixes needed
+
+  Here are the actionable items, roughly ordered by severity:
+
+  Must fix
+
+  1. Shell injection in tmux.go — RunCommand/SendKeys concatenate args into a shell string without quoting. A filename with spaces or special characters will break; a
+  malicious one could inject commands. Use shellescape or fmt.Sprintf("%q", arg) for each argument.
+  2. Config dir leak in claude.go StartSession() — On CI, isolatedConfigDir() creates a temp directory but never cleans it up (unl...
+
+### Prompt 22
+
+[Request interrupted by user]
+

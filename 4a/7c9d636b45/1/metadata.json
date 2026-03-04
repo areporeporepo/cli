@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "4a7c9d636b45",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-28T00:06:11.976667Z",
+  "branch": "alisha/kiro-oneshot",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".claude/skills/agent-integration/implementer.md",
+    "cmd/entire/cli/agent/kiro/AGENT.md",
+    "cmd/entire/cli/agent/kiro/hooks.go",
+    "cmd/entire/cli/agent/kiro/hooks_test.go",
+    "cmd/entire/cli/agent/kiro/kiro.go",
+    "cmd/entire/cli/agent/kiro/kiro_test.go",
+    "cmd/entire/cli/agent/kiro/lifecycle.go",
+    "cmd/entire/cli/agent/kiro/lifecycle_test.go",
+    "cmd/entire/cli/agent/kiro/types.go",
+    "cmd/entire/cli/agent/kiro/types_test.go",
+    "cmd/entire/cli/agent/registry.go",
+    "cmd/entire/cli/hooks_cmd.go",
+    "cmd/entire/cli/lifecycle.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_git.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/manual_commit_rewind.go",
+    "e2e/agents/kiro.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "d29d1e561b0e",
+  "initial_attribution": {
+    "calculated_at": "2026-02-28T00:06:11.945143Z",
+    "agent_lines": 2854,
+    "human_added": 4,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2858,
+    "agent_percentage": 99.86004198740378
+  }
+}

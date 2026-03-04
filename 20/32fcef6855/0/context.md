@@ -1,0 +1,43 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+# Write-Tests Command
+
+Read and follow the full procedure from `.claude/skills/agent-integration/test-writer.md`.
+
+
+ARGUMENTS: cursor cli
+
+### Prompt 2
+
+[Request interrupted by user]
+
+### Prompt 3
+
+# Research Command
+
+Read and follow the full procedure from `.claude/skills/agent-integration/researcher.md`.
+
+
+ARGUMENTS: cursor cli
+
+### Prompt 4
+
+but remember that the cursor cli binary is called 'agent'
+
+### Prompt 5
+
+# Write-Tests Command
+
+Read and follow the full procedure from `.claude/skills/agent-integration/test-writer.md`.
+
+
+ARGUMENTS: cursor cli
+
+### Prompt 6
+
+lets try fixing the cursor-cli e2e tests. the first thing to fix is the "Workspace Trust Required" dialog
+

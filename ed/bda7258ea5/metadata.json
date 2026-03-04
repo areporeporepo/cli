@@ -1,0 +1,26 @@
+{
+  "cli_version": "v0.4.9-dev-4698d3d4",
+  "checkpoint_id": "edbda7258ea5",
+  "strategy": "manual-commit",
+  "branch": "alex/add-copilot-agent",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "cmd/entire/cli/strategy/manual_commit_hooks.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ed/bda7258ea5/0/metadata.json",
+      "transcript": "/ed/bda7258ea5/0/full.jsonl",
+      "context": "/ed/bda7258ea5/0/context.md",
+      "content_hash": "/ed/bda7258ea5/0/content_hash.txt",
+      "prompt": "/ed/bda7258ea5/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 282,
+    "cache_creation_tokens": 402494,
+    "cache_read_tokens": 10956305,
+    "output_tokens": 32565,
+    "api_call_count": 100
+  }
+}
