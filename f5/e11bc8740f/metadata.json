@@ -3,7 +3,7 @@
   "checkpoint_id": "f5e11bc8740f",
   "strategy": "manual-commit",
   "branch": "soph/latest-squash-resume",
-  "checkpoints_count": 7,
+  "checkpoints_count": 8,
   "files_touched": [
     "cmd/entire/cli/integration_test/resume_test.go",
     "cmd/entire/cli/resume.go",
@@ -16,6 +16,13 @@
       "context": "/f5/e11bc8740f/0/context.md",
       "content_hash": "/f5/e11bc8740f/0/content_hash.txt",
       "prompt": "/f5/e11bc8740f/0/prompt.txt"
+    },
+    {
+      "metadata": "/f5/e11bc8740f/1/metadata.json",
+      "transcript": "/f5/e11bc8740f/1/full.jsonl",
+      "context": "",
+      "content_hash": "/f5/e11bc8740f/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
