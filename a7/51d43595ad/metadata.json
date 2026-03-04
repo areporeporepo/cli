@@ -3,7 +3,7 @@
   "checkpoint_id": "a751d43595ad",
   "strategy": "manual-commit",
   "branch": "nodo/external-plugins",
-  "checkpoints_count": 1,
+  "checkpoints_count": 2,
   "files_touched": [
     "cmd/entire/cli/agent/capabilities.go",
     "cmd/entire/cli/agent/external/discovery.go",
@@ -18,6 +18,13 @@
       "context": "/a7/51d43595ad/0/context.md",
       "content_hash": "/a7/51d43595ad/0/content_hash.txt",
       "prompt": "/a7/51d43595ad/0/prompt.txt"
+    },
+    {
+      "metadata": "/a7/51d43595ad/1/metadata.json",
+      "transcript": "/a7/51d43595ad/1/full.jsonl",
+      "context": "",
+      "content_hash": "/a7/51d43595ad/1/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
