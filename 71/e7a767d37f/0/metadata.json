@@ -1,0 +1,31 @@
+{
+  "cli_version": "v0.4.9-dev-4698d3d4",
+  "checkpoint_id": "71e7a767d37f",
+  "session_id": "19d1c506-72ed-4b7d-b66c-fb6506c3a021",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-04T05:56:44.738383Z",
+  "branch": "refactoring-transcript-reads",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/common.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "adbd088abdb6",
+  "token_usage": {
+    "input_tokens": 136,
+    "cache_creation_tokens": 545415,
+    "cache_read_tokens": 11966446,
+    "output_tokens": 41472,
+    "api_call_count": 116
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-04T05:56:43.861629Z",
+    "agent_lines": 7,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 7,
+    "agent_percentage": 100
+  }
+}

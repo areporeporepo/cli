@@ -1,0 +1,10 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+Fix this comment: ```Discovery uses context.Background() at startup
+  hooks_cmd.go:29 — Combined with #1, CLI startup hangs for N * forever if N binaries on PATH are unresponsive. Pass a bounded context (e.g., 5s total for
+  discovery).```
+
