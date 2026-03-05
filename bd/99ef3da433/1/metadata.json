@@ -1,0 +1,32 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "bd99ef3da433",
+  "session_id": "dbd2bfe1-bc12-4d4c-be2e-e2ec6b92170f",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-05T09:40:44.018485Z",
+  "branch": "nodo/external-plugins",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/hook_registry.go",
+    "cmd/entire/cli/hooks_cmd.go",
+    "cmd/entire/cli/setup.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "88621e33551a",
+  "token_usage": {
+    "input_tokens": 29,
+    "cache_creation_tokens": 41749,
+    "cache_read_tokens": 881228,
+    "output_tokens": 8415,
+    "api_call_count": 25
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-05T09:40:43.936122Z",
+    "agent_lines": 108,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 108,
+    "agent_percentage": 100
+  }
+}
