@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "f716701a8e72",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-05T18:27:46.51847Z",
+  "branch": "alisha/kiro-oneshot",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "e2e/agents/kiro.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "0cc3c611636a",
+  "initial_attribution": {
+    "calculated_at": "2026-03-05T18:27:46.517878Z",
+    "agent_lines": 27,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 27,
+    "agent_percentage": 100
+  }
+}
