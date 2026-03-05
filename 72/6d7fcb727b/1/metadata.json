@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "726d7fcb727b",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-04T14:29:55.728021Z",
+  "branch": "nodo/external-plugins",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire-agent-test/main.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "cfc1c2a51cda",
+  "initial_attribution": {
+    "calculated_at": "2026-03-04T14:29:55.727442Z",
+    "agent_lines": 231,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 231,
+    "agent_percentage": 100
+  }
+}
