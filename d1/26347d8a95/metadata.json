@@ -1,0 +1,36 @@
+{
+  "cli_version": "v0.4.9-dev-03ab9832",
+  "checkpoint_id": "d126347d8a95",
+  "strategy": "manual-commit",
+  "branch": "feat/model-in-session-info",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "cmd/entire/cli/agent/factoryaidroid/transcript.go",
+    "cmd/entire/cli/agent/factoryaidroid/transcript_test.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/manual_commit_session.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d1/26347d8a95/0/metadata.json",
+      "transcript": "/d1/26347d8a95/0/full.jsonl",
+      "context": "/d1/26347d8a95/0/context.md",
+      "content_hash": "/d1/26347d8a95/0/content_hash.txt",
+      "prompt": "/d1/26347d8a95/0/prompt.txt"
+    },
+    {
+      "metadata": "/d1/26347d8a95/1/metadata.json",
+      "transcript": "/d1/26347d8a95/1/full.jsonl",
+      "context": "",
+      "content_hash": "/d1/26347d8a95/1/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 147,
+    "cache_creation_tokens": 376010,
+    "cache_read_tokens": 14393890,
+    "output_tokens": 28034,
+    "api_call_count": 121
+  }
+}
