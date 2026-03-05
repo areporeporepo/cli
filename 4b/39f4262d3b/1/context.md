@@ -1,0 +1,12 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+What do you think about this comment ```The TranscriptPreparer capability is declared in the Capabilities struct and in the protocol docs, and the PrepareTranscript method is implemented on *Agent, but no wrapper type in capabilities.go implements agent.TranscriptPreparer. Even fullAgent doesn't include it in its compile-time interface check (var _ agent.TranscriptPreparer = (*fullAgent)(nil)). As a result, the capabilities.transcript_preparer=true declaration by external agents is silently i...
+
+### Prompt 2
+
+yes
+
