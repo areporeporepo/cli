@@ -1,0 +1,99 @@
+Implement the following plan:
+
+# Plan: E2E Triage Skill — Add Local Mode + CI Re-runs
+
+## Context
+
+The current e2e-triage skill is CI-only: it downloads artifacts from a failed GitHub Actions run and classifies failures based on static artifact analysis. This has two problems:
+
+1. **CI mode lacks re-run verification** — classification relies on heuristic signals (timeout patterns, error strings) rather than actually re-running the test to see if it reproduces.
+2. **No local triage path** — when a user wants to triage failures locally, they must manually run tests and interpret results. The skill should support `mise run test:e2e` for local re-runs.
+
+**Goal:** Enhance the single SKILL.md with two modes (auto-detected) and add re-run verification to both.
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `.claude/skills/e2e-triage/SKILL.md` | Rewrite with dual-mode (local + CI), re-run logic, updated classification |
+| `.github/workflows/e2e-triage.yml` | Add `actions: write` permission, increase timeout to 60m, update Claude prompt |
+
+**No changes needed:**
+- `.github/workflows/e2e-isolated.yml` — already has the right `workflow_dispatch` inputs
+- `mise-tasks/test/e2e/_default` — already supports `--agent` and filter args
+
+## SKILL.md Structure
+
+### Frontmatter
+```yaml
+name: e2e-triage
+description: Triage E2E test failures — run locally with mise or via CI re-runs, classify flaky vs real bug, create PRs for flaky fixes and GitHub issues for real bugs
+```
+
+### Mode Detection (new section)
+- **CI mode**: `WORKFLOW_RUN_ID` env var is set (from `e2e-triage.yml`)
+- **Local mode**: User invokes `/e2e-triage` manually — no `WORKFLOW_RUN_ID`
+
+### Local Mode Steps
+
+1. **Parse user input**: test name, agent (optional), or artifact path
+2. **First run**: `mise run test:e2e --agent <agent> <TestName>` — capture artifact dir from output
+3. **If test fails**: Run a **second time** with same params
+4. **If results split** (1 pass, 1 fail): Run a **third time** as tiebreaker
+5. **Collect results**: `(test, agent, run_1_pass/fail, run_2_pass/fail, [run_3])`
+6. Proceed to shared analysis/classification steps
+
+Note: Include cost warning — real E2E tests consume API tokens. Confirm with user before running unless specific test names were provided.
+
+### CI Mode Steps
+
+1. **Download artifacts** from failed run (existing `scripts/download-e2e-artifacts.sh`)
+2. **Identify failures** from `report.nocolor.txt` per agent (existing Step 2)
+3. **For each failing test+agent pair, sequentially**:
+   a. Trigger re-run: `gh workflow run e2e-isolated.yml -f agent=<agent> -f test=<TestName>`
+   b. Wait ~5s for run to register
+   c. Find run ID: `gh run list -w e2e-isolated.yml -L 1 --json databaseId -q '.[0].databaseId'`
+   d. Poll until complete: loop `gh run view <id> --json status,conclusion` every 30s
+   e. Download artifacts: `gh run download <id> --dir <rerun-dir>`
+   f. Repeat for second re-run
+4. **Collect results**: original failure + 2 re-run results per test
+5. Proceed to shared analysis/classification steps
+
+### Shared Steps (analysis, classification, action, summary)
+
+Largely preserved from current skill with these enhancements:
+
+**Classification gains concrete re-run signals:**
+- All runs fail with same error → strong `real-bug`
+- Original fails, both re-runs pass → strong `flaky`
+- Mixed results (some pass, some fail) → `flaky` (non-deterministic)
+- Original fails, re-runs fail with *different* error → needs deeper artifact analysis
+
+**Cross-agent correlation** uses re-run data instead of guessing.
+
+**Summary table** gains a "Re-run Results" column showing pass/fail per run.
+
+## Workflow Changes (`e2e-triage.yml`)
+
+1. Add `actions: write` to permissions (needed for `gh workflow run`)
+2. Increase `timeout-minutes: 30` → `timeout-minutes: 60`
+3. Update Claude prompt to mention re-run capability and the `e2e-isolated.yml` workflow
+4. No changes to `allowedTools` — `Bash(gh *)` already covers `gh workflow run`
+
+## Verification
+
+1. **Read the updated SKILL.md** and verify both modes are clearly documented
+2. **Local mode smoke test**: Invoke `/e2e-triage TestSomeTest --agent vogon` and verify it runs `mise run test:e2e:canary` (vogon = canary, no API cost)
+3. **CI workflow validation**: Check that `e2e-triage.yml` has correct permissions and timeout
+4. **Canary tests**: `mise run test:e2e:canary` should still pass (no Go code changes)
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/alisha/.claude/projects/-Users-alisha-Projects-devenv-cli/8f15321d-2333-415f-a295-a31e4d8776e8.jsonl
+
+---
+
+Tool loaded.
+
+---
+
+commit
