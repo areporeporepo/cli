@@ -16,13 +16,6 @@
       "context": "/d5/916dab4271/0/context.md",
       "content_hash": "/d5/916dab4271/0/content_hash.txt",
       "prompt": "/d5/916dab4271/0/prompt.txt"
-    },
-    {
-      "metadata": "/d5/916dab4271/1/metadata.json",
-      "transcript": "/d5/916dab4271/1/full.jsonl",
-      "context": "",
-      "content_hash": "/d5/916dab4271/1/content_hash.txt",
-      "prompt": ""
     }
   ],
   "token_usage": {
