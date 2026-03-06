@@ -31,13 +31,6 @@
       "context": "/4a/7c9d636b45/0/context.md",
       "content_hash": "/4a/7c9d636b45/0/content_hash.txt",
       "prompt": "/4a/7c9d636b45/0/prompt.txt"
-    },
-    {
-      "metadata": "/4a/7c9d636b45/1/metadata.json",
-      "transcript": "/4a/7c9d636b45/1/full.jsonl",
-      "context": "",
-      "content_hash": "/4a/7c9d636b45/1/content_hash.txt",
-      "prompt": ""
     }
   ],
   "token_usage": {
