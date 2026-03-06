@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "f778fcabb2c9",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-05T17:58:01.709548Z",
+  "branch": "fix/trail-list-hide-merged-closed",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/trail_cmd.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "ddb3eb3655cf",
+  "initial_attribution": {
+    "calculated_at": "2026-03-05T17:58:01.709053Z",
+    "agent_lines": 15,
+    "human_added": 5772,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 5787,
+    "agent_percentage": 0.2592016588906169
+  }
+}

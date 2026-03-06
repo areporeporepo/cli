@@ -1,0 +1,26 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "1043cf5253ff",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-01T20:31:05.757834Z",
+  "branch": "soph/review-skip-fully-condensed-sessions",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/integration_test/fully_condensed_test.go",
+    "cmd/entire/cli/session/phase_test.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/phase_postcommit_test.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "f8a6c149bd67",
+  "initial_attribution": {
+    "calculated_at": "2026-03-01T20:31:05.757347Z",
+    "agent_lines": 319,
+    "human_added": 253,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 572,
+    "agent_percentage": 55.769230769230774
+  }
+}

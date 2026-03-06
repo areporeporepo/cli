@@ -1,0 +1,26 @@
+{
+  "cli_version": "v0.4.8-dev-bd9d1816",
+  "checkpoint_id": "d42a011e0627",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-03T05:05:47.25733Z",
+  "branch": "571-remove-contextmd-and-simplify-prompttxt-to-checkpoint-prompts-only",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/agent/claudecode/claude.go",
+    "cmd/entire/cli/agent/claudecode/transcript.go",
+    "cmd/entire/cli/agent/claudecode/transcript_test.go",
+    "cmd/entire/cli/integration_test/agent_test.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "a16924ee514f",
+  "initial_attribution": {
+    "calculated_at": "2026-03-03T05:05:47.255926Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "agent_percentage": 0
+  }
+}
