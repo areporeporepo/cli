@@ -192,3 +192,7 @@ we need to 'progress' the transcript in between the push and the turn end..
 ---
 
 this will work for Vogon, but not necessarily for the other agents...
+
+---
+
+commit these changes
