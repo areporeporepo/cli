@@ -3,10 +3,9 @@
   "checkpoint_id": "25ffe50aaaa2",
   "strategy": "manual-commit",
   "branch": "alex/copilot-e2e-fix",
-  "checkpoints_count": 0,
+  "checkpoints_count": 1,
   "files_touched": [
-    "e2e/agents/copilot-cli.go",
-    "e2e/testutil/repo.go"
+    "e2e/agents/copilot-cli.go"
   ],
   "sessions": [
     {
@@ -17,10 +16,10 @@
     }
   ],
   "token_usage": {
-    "input_tokens": 32,
-    "cache_creation_tokens": 18783,
-    "cache_read_tokens": 3606704,
-    "output_tokens": 6024,
-    "api_call_count": 28
+    "input_tokens": 24,
+    "cache_creation_tokens": 16883,
+    "cache_read_tokens": 3297411,
+    "output_tokens": 3412,
+    "api_call_count": 22
   }
 }
