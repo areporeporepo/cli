@@ -1,1 +1,0 @@
-the vogon tests are now failing, can you update them? can we also add something to CLAUDE.md so we remember that if wording in E2E is changed vogon probably needs manual fixes
