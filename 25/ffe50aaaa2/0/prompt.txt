@@ -1,0 +1,7 @@
+what happens if we set an incorrect token?
+
+---
+
+yes, clean up...
+
+now we had a pattern of 'repeatable tests for known failure modes', can we apply this to all the gpt-4.1 flakes?

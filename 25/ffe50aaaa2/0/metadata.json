@@ -1,0 +1,36 @@
+{
+  "cli_version": "v0.4.9-dev-74af4566",
+  "checkpoint_id": "25ffe50aaaa2",
+  "session_id": "5624fe85-0751-4a6f-9d63-9659411bf7ae",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-06T04:49:15.729502Z",
+  "branch": "alex/copilot-e2e-fix",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "e2e/agents/copilot-cli.go",
+    "e2e/testutil/repo.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "cef3abcc01e7",
+  "checkpoint_transcript_start": 651,
+  "transcript_lines_at_start": 651,
+  "token_usage": {
+    "input_tokens": 32,
+    "cache_creation_tokens": 18783,
+    "cache_read_tokens": 3606704,
+    "output_tokens": 6024,
+    "api_call_count": 28
+  },
+  "session_metrics": {
+    "turn_count": 8
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-06T04:49:15.527719Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 0,
+    "agent_percentage": 0
+  }
+}
