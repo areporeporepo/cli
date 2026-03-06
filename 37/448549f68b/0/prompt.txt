@@ -114,3 +114,7 @@ there are actually three things I want;
 1. fix this bug (the pragmatic workaround is fine for this branch)
 2. do something about the cwd inspection
 3. refactor all the 'git' operations into the gitops package (and while we're doing that we might as well make the cwd injectable always)
+
+---
+
+commit, push, PR
