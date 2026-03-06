@@ -1,0 +1,33 @@
+{
+  "cli_version": "v0.4.7-215-g473bd8795",
+  "checkpoint_id": "8a947931a662",
+  "strategy": "manual-commit",
+  "branch": "alex/agent-architecture-test",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/architecture_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/8a/947931a662/0/metadata.json",
+      "transcript": "/8a/947931a662/0/full.jsonl",
+      "context": "/8a/947931a662/0/context.md",
+      "content_hash": "/8a/947931a662/0/content_hash.txt",
+      "prompt": "/8a/947931a662/0/prompt.txt"
+    },
+    {
+      "metadata": "/8a/947931a662/1/metadata.json",
+      "transcript": "/8a/947931a662/1/full.jsonl",
+      "context": "/8a/947931a662/1/context.md",
+      "content_hash": "/8a/947931a662/1/content_hash.txt",
+      "prompt": "/8a/947931a662/1/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 91,
+    "cache_creation_tokens": 476253,
+    "cache_read_tokens": 6035312,
+    "output_tokens": 18172,
+    "api_call_count": 65
+  }
+}

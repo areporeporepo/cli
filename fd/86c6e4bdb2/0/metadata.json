@@ -1,0 +1,30 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "fd86c6e4bdb2",
+  "session_id": "6772544b-bdcb-4b07-be35-c46c1a37a1a4",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T03:10:14.540602Z",
+  "branch": "20260226-paul-fix-explain-contexts",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/explain.go",
+    "cmd/entire/cli/explain_test.go",
+    "cmd/entire/cli/strategy/cleanup.go",
+    "cmd/entire/cli/strategy/common.go",
+    "cmd/entire/cli/strategy/manual_commit_attribution.go",
+    "cmd/entire/cli/strategy/manual_commit_attribution_test.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_rewind.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "2af73b7c6876",
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T03:10:14.539185Z",
+    "agent_lines": 0,
+    "human_added": 89,
+    "human_modified": 546,
+    "human_removed": 0,
+    "total_committed": 603,
+    "agent_percentage": 0
+  }
+}

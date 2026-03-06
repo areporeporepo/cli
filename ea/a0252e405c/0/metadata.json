@@ -1,0 +1,27 @@
+{
+  "cli_version": "v0.4.7-221-gacfa2b49-dirty",
+  "checkpoint_id": "eaa0252e405c",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-27T05:20:20.351066Z",
+  "branch": "gtrrz-victor/cursor-export-import-sessions",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/cursor_export.go",
+    "cmd/entire/cli/cursor_import.go",
+    "cmd/entire/cli/root.go",
+    "go.mod",
+    "go.sum"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "1353f37cc43a",
+  "initial_attribution": {
+    "calculated_at": "2026-02-27T05:20:20.332199Z",
+    "agent_lines": 471,
+    "human_added": 33,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 504,
+    "agent_percentage": 93.45238095238095
+  }
+}

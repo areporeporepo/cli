@@ -1,0 +1,23 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "0ff68845c557",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-26T23:22:45.290653Z",
+  "branch": "squash-merge-resume",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/resume.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "bead4bffe5cf",
+  "initial_attribution": {
+    "calculated_at": "2026-02-26T23:22:45.290268Z",
+    "agent_lines": 22,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 22,
+    "agent_percentage": 100
+  }
+}

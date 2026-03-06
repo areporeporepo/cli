@@ -1,0 +1,32 @@
+{
+  "cli_version": "v0.4.7-75-gc51f1d02",
+  "checkpoint_id": "0137bc9830b6",
+  "session_id": "dc50dae0-c79b-483e-9c1a-8b4a484a8325",
+  "strategy": "manual-commit",
+  "created_at": "2026-02-25T06:50:32.148191Z",
+  "branch": "alex/consolidate-e2e-tests",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "e2e/tests/session_lifecycle_test.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "879b5f4a342c",
+  "checkpoint_transcript_start": 128,
+  "transcript_lines_at_start": 128,
+  "token_usage": {
+    "input_tokens": 27,
+    "cache_creation_tokens": 9663,
+    "cache_read_tokens": 1114274,
+    "output_tokens": 1849,
+    "api_call_count": 17
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-02-25T06:50:31.754004Z",
+    "agent_lines": 2,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 2,
+    "agent_percentage": 100
+  }
+}

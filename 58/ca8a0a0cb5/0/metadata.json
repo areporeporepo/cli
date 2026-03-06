@@ -1,0 +1,35 @@
+{
+  "cli_version": "v0.4.9-dev-5289594c",
+  "checkpoint_id": "58ca8a0a0cb5",
+  "session_id": "042ac44f-5efd-4c35-8e56-7fedf6e12548",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-05T05:14:56.221569Z",
+  "branch": "fix/reconcile-disconnected-metadata-branch",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/strategy/metadata_reconcile.go",
+    "cmd/entire/cli/strategy/push_common.go",
+    "cmd/entire/cli/doctor.go",
+    "cmd/entire/cli/strategy/metadata_reconcile_test.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "440fefac41ae",
+  "checkpoint_transcript_start": 422,
+  "transcript_lines_at_start": 422,
+  "token_usage": {
+    "input_tokens": 44,
+    "cache_creation_tokens": 76385,
+    "cache_read_tokens": 5328249,
+    "output_tokens": 11945,
+    "api_call_count": 38
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-05T05:14:55.802198Z",
+    "agent_lines": 178,
+    "human_added": 23,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 201,
+    "agent_percentage": 88.55721393034825
+  }
+}

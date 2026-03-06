@@ -1,0 +1,44 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "e65d9bec561a",
+  "strategy": "manual-commit",
+  "branch": "worktree-cached-spinning-nebula",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/agent/chunking.go",
+    "cmd/entire/cli/checkpoint/checkpoint_test.go",
+    "cmd/entire/cli/checkpoint/committed.go",
+    "cmd/entire/cli/checkpoint/compression_bench_test.go",
+    "cmd/entire/cli/checkpoint/temporary.go",
+    "cmd/entire/cli/compression/zstd.go",
+    "cmd/entire/cli/compression/zstd_bench_test.go",
+    "cmd/entire/cli/compression/zstd_test.go",
+    "cmd/entire/cli/integration_test/deferred_finalization_test.go",
+    "cmd/entire/cli/integration_test/opencode_hooks_test.go",
+    "cmd/entire/cli/integration_test/phase_transitions_test.go",
+    "cmd/entire/cli/integration_test/testenv.go",
+    "cmd/entire/cli/optimize.go",
+    "cmd/entire/cli/paths/paths.go",
+    "cmd/entire/cli/root.go",
+    "cmd/entire/cli/strategy/common.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "go.mod"
+  ],
+  "sessions": [
+    {
+      "metadata": "/e6/5d9bec561a/0/metadata.json",
+      "transcript": "/e6/5d9bec561a/0/full.jsonl",
+      "context": "/e6/5d9bec561a/0/context.md",
+      "content_hash": "/e6/5d9bec561a/0/content_hash.txt",
+      "prompt": "/e6/5d9bec561a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 225,
+    "cache_creation_tokens": 198610,
+    "cache_read_tokens": 22506072,
+    "output_tokens": 18202,
+    "api_call_count": 219
+  }
+}

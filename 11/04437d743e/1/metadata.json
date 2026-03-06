@@ -1,0 +1,41 @@
+{
+  "cli_version": "v0.4.8-5-ge7ce4438",
+  "checkpoint_id": "1104437d743e",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-02T04:11:05.350874Z",
+  "branch": "571-remove-contextmd-and-simplify-prompttxt-to-checkpoint-prompts-only",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "CLAUDE.md",
+    "cmd/entire/cli/benchutil/parse_tree_bench_test.go",
+    "cmd/entire/cli/checkpoint/checkpoint.go",
+    "cmd/entire/cli/checkpoint/checkpoint_test.go",
+    "cmd/entire/cli/checkpoint/committed.go",
+    "cmd/entire/cli/checkpoint/committed_update_test.go",
+    "cmd/entire/cli/integration_test/manual_commit_workflow_test.go",
+    "cmd/entire/cli/lifecycle.go",
+    "cmd/entire/cli/lifecycle_test.go",
+    "cmd/entire/cli/paths/paths.go",
+    "cmd/entire/cli/strategy/common.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation_test.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/manual_commit_logs.go",
+    "cmd/entire/cli/strategy/manual_commit_test.go",
+    "cmd/entire/cli/strategy/manual_commit_types.go",
+    "docs/architecture/claude-hooks-integration.md",
+    "docs/architecture/sessions-and-checkpoints.md"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "1353f37cc43a",
+  "initial_attribution": {
+    "calculated_at": "2026-03-02T04:11:05.350339Z",
+    "agent_lines": 929,
+    "human_added": 2876,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3805,
+    "agent_percentage": 24.415243101182654
+  }
+}
