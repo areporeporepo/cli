@@ -172,3 +172,7 @@ is it always in memory? what if we've pulled a branch in?
 ---
 
 sure.
+
+---
+
+yes
