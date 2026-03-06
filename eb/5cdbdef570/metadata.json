@@ -1,0 +1,26 @@
+{
+  "cli_version": "v0.4.9-dev-5376c186",
+  "checkpoint_id": "eb5cdbdef570",
+  "strategy": "manual-commit",
+  "branch": "fix/dispatch-test-leaks-session-state",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "cmd/entire/cli/checkpoint/committed.go",
+    "cmd/entire/cli/explain.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/eb/5cdbdef570/0/metadata.json",
+      "transcript": "/eb/5cdbdef570/0/full.jsonl",
+      "content_hash": "/eb/5cdbdef570/0/content_hash.txt",
+      "prompt": "/eb/5cdbdef570/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 744,
+    "cache_creation_tokens": 1635710,
+    "cache_read_tokens": 63415051,
+    "output_tokens": 136777,
+    "api_call_count": 531
+  }
+}
