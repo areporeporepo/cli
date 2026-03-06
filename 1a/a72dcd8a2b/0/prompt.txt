@@ -1,0 +1,316 @@
+Implement the following plan:
+
+# E2E Triage Automation — Implementation Plan
+
+## Context
+
+E2E tests on `main` are flaky and constantly changing. When they fail in CI, someone has to manually download artifacts, analyze them, figure out if it's a real bug or agent non-determinism, and then either fix the test or file a bug. This plan automates that entire workflow with a new `/e2e-triage` skill backed by a reusable artifact download script.
+
+**Outcome**: E2E failures on `main` auto-trigger Claude Code (Opus) in CI via `workflow_run`. Claude downloads artifacts, analyzes failures, classifies flaky vs real bug, and creates a batched PR (flaky) or GitHub issue with dedup (real bug). Also available locally via `/e2e-triage`.
+
+---
+
+## New Files
+
+### 1. `scripts/download-e2e-artifacts.sh`
+
+Reusable shell script for downloading E2E artifacts from GitHub Actions.
+
+**Interface:**
+```
+Usage: scripts/download-e2e-artifacts.sh [RUN_ID | RUN_URL | "latest"]
+  - RUN_ID:  numeric GitHub Actions run ID
+  - RUN_URL: full URL like https://github.com/entireio/cli/actions/runs/12345
+  - "latest": most recent failed E2E run on main
+```
+
+**Behavior:**
+- Requires `gh` CLI installed and authenticated (validates upfront)
+- For `latest`: `gh run list -w e2e.yml --status=failure -L1 --json databaseId -q '.[0].databaseId'`
+- Extracts run ID from URL via regex if URL provided
+- Downloads to `e2e/artifacts/ci-<run-id>/` using `gh run download <run-id> --dir <dest>`
+- Restructures: moves `e2e-artifacts-<agent>/*` → `<dest>/<agent>/` (flattens wrapper dirs)
+- Writes `.run-info.json` with `run_id`, `run_url`, `commit`, `downloaded_at`
+- Prints absolute path of download directory as **last line** of stdout (for callers to capture)
+- Prints metadata (run ID, agents found, commit) to stderr
+- Exits non-zero with clear message if: `gh` missing, not authenticated, run not found, artifacts expired
+
+**Key details:**
+- Get run URL: `gh run view <run-id> --json url -q '.url'`
+- Get commit: `gh run view <run-id> --json headSha -q '.headSha'`
+- List downloaded artifact dirs: `ls -d e2e-artifacts-*/`
+- Add to `.gitignore`: `e2e/artifacts/ci-*/` (if not already covered by `e2e/artifacts/`)
+
+### 2. `.claude/skills/e2e-triage/SKILL.md`
+
+The main skill orchestrating the full workflow.
+
+---
+
+## Skill Workflow (7 Steps)
+
+### Step 1: Download Artifacts
+
+**If given a run ID, URL, or "latest":**
+```bash
+artifact_dir=$(scripts/download-e2e-artifacts.sh <input>)
+```
+
+**If given a local path:** Use directly, skip download.
+
+### Step 2: Identify Failures
+
+For each agent subdirectory in artifact root:
+1. Read `report.nocolor.txt` → list failed tests with error messages, file:line refs
+2. Skip agents with zero failures
+3. Build failure list: `[(test_name, agent, error_line, duration, file:line)]`
+
+### Step 3: Analyze Each Failure (debug-e2e methodology)
+
+For each failure:
+1. Read `console.log` — what did the agent actually do?
+2. Read test source at `file:line` — what was expected?
+3. Read `entire-logs/entire.log` — any CLI errors, panics, unexpected behavior?
+4. Read `git-log.txt` / `git-tree.txt` — repo state
+5. Read `checkpoint-metadata/` — corrupt or missing metadata?
+
+### Step 4: Classify Each Failure
+
+**Strong `real-bug` signals (any one sufficient):**
+- `entire.log` contains `"level":"ERROR"` or panic/stack traces
+- Checkpoint metadata structurally corrupt (malformed JSON, missing `checkpoint_id`/`strategy`)
+- Session state file missing or malformed when expected
+- Hooks did not fire at all (no `hook invoked` log entries)
+- Shadow/metadata branch has wrong tree structure
+- Same test fails across 3+ agents with same non-timeout symptom
+- Error references CLI code (panic in `cmd/entire/cli/`)
+
+**Strong `flaky` signals (unless overridden by real-bug):**
+- `signal: killed` (timeout)
+- `context deadline exceeded` or `WaitForCheckpoint.*exceeded deadline`
+- Agent asked for confirmation instead of acting
+- Agent created file at wrong path / wrong name
+- Agent produced no output
+- Agent committed when it shouldn't have (or vice versa)
+- Test fails for only one agent, passes for others
+- Duration near timeout limit
+
+**Ambiguous:** Read `entire.log` carefully — if hooks fired correctly and metadata is valid → lean `flaky`. If hooks fired but produced wrong results → lean `real-bug`.
+
+### Step 5: Cross-Agent Correlation
+
+Before acting:
+- Same test fails 3+ agents with similar errors → override to `real-bug`
+- Same test fails only 1 agent → lean `flaky`
+
+### Step 6: Take Action
+
+#### For `flaky` failures → Batched PR
+
+1. Create branch `fix/e2e-flaky-<run-id>`
+2. Apply fixes to ALL flaky test files (one branch, one PR):
+   - Agent asked for confirmation → append "Do not ask for confirmation" to prompt
+   - Agent wrote to wrong path → be more explicit about paths
+   - Agent committed when shouldn't → add "Do not commit"
+   - Checkpoint wait timeout → increase timeout argument
+   - Agent timeout (signal: killed) → increase per-test timeout, simplify prompt
+3. Run verification:
+   ```bash
+   mise run test:e2e:canary   # Must pass
+   mise run fmt && mise run lint
+   ```
+4. If canary fails → investigate and adjust; if unfixable, fall back to issue creation
+5. Commit and create PR:
+   ```bash
+   gh pr create \
+     --title "fix(e2e): make flaky tests more resilient (run <run-id>)" \
+     --body "<structured body with per-test changes, evidence, run link>"
+   ```
+
+#### For `real-bug` failures → Issue (with dedup)
+
+1. **Search existing issues first:**
+   ```bash
+   gh issue list --search "is:open label:e2e <TestName>" --json number,title,url
+   ```
+2. **If matching issue exists:** Add a comment with new evidence:
+   ```bash
+   gh issue comment <number> --body "<verification details, run link, new evidence>"
+   ```
+   Comment should note "Verified still failing in CI run <URL>" plus any new diagnostic details.
+
+3. **If no matching issue:** Create new:
+   ```bash
+   gh issue create \
+     --title "E2E: <TestName> fails — <brief symptom>" \
+     --label "bug,e2e" \
+     --body "<structured body>"
+   ```
+
+   Issue body includes:
+   - Test name, agent(s), CI run link, frequency
+   - Failure summary (expected vs actual)
+   - Root cause analysis (which CLI component: hooks, session, checkpoint, attribution, strategy)
+   - Key evidence: `entire.log` excerpts, `console.log` excerpts, git state
+   - Reproduction steps
+   - Suspected fix location (file, function, reason)
+
+### Step 7: Summary Report
+
+Print a table:
+```
+| Test | Agent(s) | Classification | Action | Link |
+|------|----------|---------------|--------|------|
+| TestFoo | claude-code | flaky | PR #123 | url |
+| TestBar | all agents | real-bug | Issue #456 (existing, commented) | url |
+| TestBaz | opencode | real-bug | Issue #457 (new) | url |
+```
+
+---
+
+---
+
+## CI Automation: `.github/workflows/e2e-triage.yml`
+
+A new workflow that auto-runs Claude Code on E2E failure.
+
+### Trigger
+
+```yaml
+on:
+  workflow_run:
+    workflows: ["E2E Tests"]
+    types: [completed]
+```
+
+The `workflow_run` event fires after the E2E workflow finishes. The job only runs when the conclusion is `failure`.
+
+### Workflow Structure
+
+```yaml
+name: E2E Triage
+
+on:
+  workflow_run:
+    workflows: ["E2E Tests"]
+    types: [completed]
+
+permissions:
+  contents: write      # Create branches and push fixes
+  pull-requests: write # Create PRs
+  issues: write        # Create/comment on issues
+  actions: read        # Download artifacts
+
+jobs:
+  triage:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup mise
+        uses: jdx/mise-action@v3
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y tmux
+
+      - name: Install Claude Code CLI
+        run: curl -fsSL https://claude.ai/install.sh | bash
+
+      - name: Download E2E artifacts
+        run: |
+          scripts/download-e2e-artifacts.sh ${{ github.event.workflow_run.id }}
+
+      - name: Run triage
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          ARTIFACT_DIR="e2e/artifacts/ci-${RUN_ID}"
+          claude -p \
+            --model claude-opus-4-6 \
+            --allowedTools "Bash(mise run *),Bash(gh *),Bash(git *),Read,Write,Edit,Glob,Grep" \
+            "You are triaging E2E test failures from CI run ${RUN_ID}.
+             Follow the /e2e-triage skill instructions in .claude/skills/e2e-triage/SKILL.md.
+             Artifact directory: ${ARTIFACT_DIR}
+             CI run URL: ${{ github.event.workflow_run.html_url }}
+             Do NOT ask questions — act autonomously.
+             For flaky fixes: create a PR.
+             For real bugs: create or comment on GitHub issues.
+             Print a summary table at the end."
+```
+
+### Key Design Choices
+
+- **`--model claude-opus-4-6`** — Opus for best analysis quality (per user preference)
+- **`--allowedTools`** — Explicitly whitelists safe tools; prevents Claude from running arbitrary commands. `Bash(mise run *)` allows test/lint/fmt, `Bash(gh *)` allows issue/PR creation, `Bash(git *)` allows branch/commit operations.
+- **`permissions`** — Workflow needs `contents: write` (push branches), `pull-requests: write` (create PRs), `issues: write` (create/comment issues), `actions: read` (download artifacts from triggering run)
+- **`timeout-minutes: 30`** — Generous limit for Opus to analyze multiple failures
+- **`GH_TOKEN`** — Uses `GITHUB_TOKEN` (auto-provided) for `gh` CLI operations within the repo
+- **No Slack notification** — The existing `e2e.yml` already notifies Slack on failure. The triage workflow creates PRs/issues which generate their own GitHub notifications.
+
+### Artifact Download in `workflow_run` Context
+
+The `workflow_run` event provides `github.event.workflow_run.id` which is the run ID of the triggering E2E workflow. The download script uses this to fetch artifacts via `gh run download`. The `actions: read` permission on the triage workflow allows downloading artifacts from the triggering run.
+
+### Safety Guards
+
+- **Only runs on failure** — `if: github.event.workflow_run.conclusion == 'failure'`
+- **Only on main** — The E2E workflow only runs on `push: main` and `workflow_dispatch`, so triage only triggers for main branch failures
+- **Tool allowlist** — Claude cannot run arbitrary bash commands
+- **Timeout** — 30 minute hard limit prevents runaway costs
+- **Concurrency** — Consider adding concurrency group to prevent parallel triage runs:
+  ```yaml
+  concurrency:
+    group: e2e-triage
+    cancel-in-progress: true
+  ```
+
+---
+
+## Files to Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `scripts/download-e2e-artifacts.sh` | **Create** | Artifact download script |
+| `.claude/skills/e2e-triage/SKILL.md` | **Create** | Triage skill definition |
+| `.github/workflows/e2e-triage.yml` | **Create** | CI workflow: auto-triage on E2E failure |
+| `e2e/README.md` | **Edit** | Add triage skill + CI workflow reference |
+
+---
+
+## Verification
+
+1. **Script test:** Run `scripts/download-e2e-artifacts.sh latest` and verify artifacts download correctly with proper directory structure
+2. **Local mode test:** Point `/e2e-triage` at an existing local artifact path (from `e2e/artifacts/`) and verify analysis works without `gh`
+3. **Canary check:** After any flaky fixes, `mise run test:e2e:canary` must pass
+4. **Lint:** `mise run fmt && mise run lint` on any modified Go test files
+5. **CI workflow validation:** Check workflow syntax with `actionlint .github/workflows/e2e-triage.yml` or push to a branch and verify it parses correctly in GitHub Actions UI
+6. **End-to-end:** After merging, trigger a manual E2E run (`workflow_dispatch`) for a known-flaky agent, let it fail, and verify the triage workflow fires and produces a PR or issue
+
+---
+
+## Design Decisions
+
+- **`claude -p` with `workflow_run`** — Full Claude Code capabilities in CI; intelligent analysis, not regex-based
+- **Opus model** — Best quality for nuanced root cause analysis; ~$15/run but only runs on failures
+- **Batched PR** for all flaky fixes from one run — fewer PRs to review
+- **Issue dedup** — search existing open issues before creating; add verification comment if found
+- **Skill embeds debug-e2e methodology** rather than "calling" it — skills are instructions, not callable functions. Self-contained is more reliable.
+- **Script is separate** from skill — reusable by humans (`scripts/download-e2e-artifacts.sh latest`) without invoking Claude
+- **Local mode supported** — accepts local artifact paths to debug without `gh` CLI
+- **Tool allowlist in CI** — prevents Claude from running arbitrary commands; only `mise`, `gh`, `git`, and file operations
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/alisha/.claude/projects/-Users-alisha-Projects-devenv-cli/eefc0e02-c46e-41bd-a002-b0f50ef793dd.jsonl
+
+---
+
+Tool loaded.
+
+---
+
+commit
