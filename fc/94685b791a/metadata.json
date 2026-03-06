@@ -3,7 +3,7 @@
   "checkpoint_id": "fc94685b791a",
   "strategy": "manual-commit",
   "branch": "testqueue",
-  "checkpoints_count": 9,
+  "checkpoints_count": 10,
   "files_touched": [
     "cmd/entire/cli/strategy/commit_hook_profile_test.go",
     "cmd/entire/main.go"
@@ -71,6 +71,13 @@
       "context": "/fc/94685b791a/8/context.md",
       "content_hash": "/fc/94685b791a/8/content_hash.txt",
       "prompt": "/fc/94685b791a/8/prompt.txt"
+    },
+    {
+      "metadata": "/fc/94685b791a/9/metadata.json",
+      "transcript": "/fc/94685b791a/9/full.jsonl",
+      "context": "",
+      "content_hash": "/fc/94685b791a/9/content_hash.txt",
+      "prompt": ""
     }
   ],
   "token_usage": {
