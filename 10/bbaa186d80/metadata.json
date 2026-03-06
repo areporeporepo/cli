@@ -1,0 +1,26 @@
+{
+  "cli_version": "v0.4.9-dev-5376c186",
+  "checkpoint_id": "10bbaa186d80",
+  "strategy": "manual-commit",
+  "branch": "alex/fix-explain-missing-multisession-prompt",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "cmd/entire/cli/strategy/common.go",
+    "cmd/entire/cli/strategy/common_test.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/10/bbaa186d80/0/metadata.json",
+      "transcript": "/10/bbaa186d80/0/full.jsonl",
+      "content_hash": "/10/bbaa186d80/0/content_hash.txt",
+      "prompt": "/10/bbaa186d80/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 59,
+    "cache_creation_tokens": 200558,
+    "cache_read_tokens": 1691005,
+    "output_tokens": 10213,
+    "api_call_count": 37
+  }
+}
