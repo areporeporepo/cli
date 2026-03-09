@@ -20,71 +20,73 @@
     "turn_count": 4
   },
   "summary": {
-    "intent": "Debug and fix 7 failing copilot-cli E2E tests from CI run #22747075400, then clean up into a single commit and open a PR.",
-    "outcome": "All 7 original failures fixed (42/43 passing); PR #632 opened on alex/copilot-e2e-fix with three root-cause fixes and a transient-retry improvement for gpt-4.1 Edit tool flakes.",
+    "intent": "Debug 7 failing copilot-cli E2E tests in CI run #22747075400, fix root causes, and ship a clean PR with the fixes validated via targeted CI runs.",
+    "outcome": "All 7 original failures fixed via three root-cause fixes (copilot-instructions.md in test repos, env var forwarding into tmux, stripping CI env vars from tmux sessions) plus a transient-retry fix for gpt-4.1 Edit tool flakiness. PR #632 created; latest CI run showed 42/43 passing with the 1 failure being an unrelated corrupted installation on the CI runner.",
     "learnings": {
       "repo": [
-        "NewTmuxSession (e2e/agents/tmux.go) only forwards PATH into the tmux session; all other agent-specific env vars must be passed explicitly via a nested `env KEY=VAL ...` command.",
-        "CI env vars (CI, GITHUB_ACTIONS) cause Copilot CLI to suppress its interactive TUI prompt entirely; they must be stripped via unsetEnv. Gemini and Droid agents already do this — copilot-cli was missing it.",
-        "Copilot CLI v0.0.422 requires a .github/copilot-instructions.md to exist in the repo; without it, non-interactive mode degrades (Edit tool omits old_str) and interactive mode blocks on a notice.",
-        "The IsTransientError + errScenarioRestart pattern only fires when err != nil; silent exit-0 failures (Copilot's Edit tool returning zero changes) need a separate synthetic error raised inside RunPrompt.",
-        "Agent-specific test repo setup lives in SetupRepo (e2e/testutil/repo.go ~line 77); droid gets settings, opencode gets config — copilot now gets a stub copilot-instructions.md.",
-        "Copilot's Edit tool may self-correct within a single session run; the +0/-0 transient retry must be gated on both 'old_str is required' in stdout AND 'Total code changes: +0 -0' in stderr to avoid false-positive restarts.",
-        "The copilot-cli agent was introduced in branch alex/add-copilot-agent at commit b2a7603, not yet on main at the time of the worktree — the fix branch had to be based off that commit."
+        "NewTmuxSession (e2e/agents/tmux.go) only auto-forwards PATH — all other agent-specific env vars must be passed explicitly through the command args",
+        "Every other interactive agent (droid, gemini, vogon, opencode) strips CI, GITHUB_ACTIONS, and ENTIRE_TEST_TTY from tmux sessions; copilot-cli was missing this",
+        "IsTransientError only fires when err != nil — exit-0 silent failures require separate detection in RunPrompt that synthesizes an error before the retry mechanism can kick in",
+        "Agent-specific test repo setup pattern exists in SetupRepo: droid gets settings, opencode gets config, now copilot gets copilot-instructions.md",
+        "Copilot CLI v0.0.422 checks CI/GITHUB_ACTIONS env vars and disables its interactive TUI when they are set",
+        "Copilot CLI requires .github/copilot-instructions.md to be present or it blocks/degrades — even in non-interactive -p mode for tool calling quality",
+        "Copilot's Edit tool (gpt-4.1) sometimes self-corrects within a single session run, so old_str is required in stdout alone is insufficient to trigger retry — must also confirm Total code changes: +0 -0 in stderr",
+        "Non-interactive RunPrompt uses cmd.Env = append(os.Environ(), ...) inheriting all env vars, but tmux sessions start fresh and only get what NewTmuxSession or the command args forward",
+        "The copilot-cli agent was added in a PR branch (b2a7603, alex/add-copilot-agent) that was not yet on main when the E2E framework worktree was checked out — needed to branch from that commit"
       ],
       "code": [
         {
           "path": "e2e/agents/tmux.go",
           "line": 37,
           "end_line": 42,
-          "finding": "NewTmuxSession always prepends its own `env PATH=\u003cshellQuote(os.Getenv(PATH))\u003e` to the command string, making PATH in agent-provided envArgs redundant (harmless but noisy)."
+          "finding": "NewTmuxSession always prepends its own 'env PATH=...' wrapper around the command, meaning PATH gets forwarded twice when agents also explicitly include it in their env args — harmless since both values are identical, but redundant"
+        },
+        {
+          "path": "e2e/testutil/repo.go",
+          "line": 77,
+          "end_line": 88,
+          "finding": "SetupRepo has the pattern for agent-specific setup guarded by agent.Name() checks; added copilot-cli block to create .github/copilot-instructions.md in temp test repos"
         },
         {
           "path": "e2e/agents/copilot-cli.go",
           "line": 110,
           "end_line": 117,
-          "finding": "Synthetic error for silent exit-0 Edit tool failure: checks out.Stdout for 'old_str is required' AND out.Stderr for 'Total code changes: +0 -0' before surfacing an error; dual-gate prevents false positives when Copilot self-corrects internally."
+          "finding": "Synthetic error detection for silent success-with-no-changes: requires both 'old_str is required' in stdout AND 'Total code changes: +0 -0' in stderr before synthesizing an error — the dual condition prevents false positives when Copilot self-corrects"
         },
         {
           "path": "e2e/agents/copilot-cli.go",
-          "line": 129,
-          "end_line": 135,
-          "finding": "COPILOT_GITHUB_TOKEN must be validated before the tmux session is created; silently skipping it (empty-string check) causes a late, cryptic auth failure inside Copilot rather than an early actionable error."
+          "line": 43,
+          "end_line": 45,
+          "finding": "IsTransientError substring check for 'old_str is required' is broader than the RunPrompt check (no +0 -0 guard) — acceptable safety net but could theoretically false-positive if file content contains that string"
         },
         {
-          "path": "e2e/agents/copilot-cli.go",
-          "line": 162,
-          "finding": "SendKeys error inside the startup dialog dismissal loop was silently discarded; if tmux dies mid-loop the resulting error message says 'waiting for startup prompt' rather than 'failed to send Enter key', misdirecting debugging."
-        },
-        {
-          "path": "e2e/testutil/repo.go",
-          "line": 70,
-          "end_line": 87,
-          "finding": "Established pattern for agent-specific repo bootstrap: guard on agent.Name() and write files/config before returning the repo path. Copilot's .github/copilot-instructions.md stub follows the same structure as the opencode config block."
+          "path": "e2e/agents/cursor_cli.go",
+          "line": 1,
+          "end_line": 50,
+          "finding": "Reference implementation for correct interactive agent env forwarding: explicitly forwards CURSOR_API_KEY, PATH, HOME, TERM, resolves binary to absolute path with exec.LookPath, strips CI vars via unsetEnv"
         }
       ],
       "workflow": [
-        "Never run `git reset --soft HEAD~N` with uncommitted working tree changes — the soft reset restores the index from those N commits, silently clobbering newer unstaged edits. Stage all changes before squashing.",
-        "`git add \u003crelative-path\u003e` can fail inside a worktree due to CWD mismatch; use the absolute path or verify CWD before staging.",
-        "Download CI artifacts into e2e/artifacts/ (project convention) rather than /tmp so they persist and are accessible by path across tool calls.",
-        "False-positive transient retries are worse than no retries: they burn through the scenario attempt budget and can trigger upstream rate limits, turning 1 failure into 4+.",
-        "When a local reproduction attempt shows an issue doesn't reproduce (e.g., CI=true didn't block Copilot interactivity locally), trust the CI data over the local test and keep investigating environmental differences.",
-        "Automated PR reviewers (Cursor bot, Copilot bot) flagged the redundant PATH forwarding and token-in-ps-args concerns that the manual code review also caught — useful as a cross-check."
+        "git reset --soft HEAD~N restores the index from those N commits, clobbering any newer unstaged working tree edits — always stage new changes before squashing",
+        "In a git worktree, git add with repo-relative paths fails because the CWD differs; use absolute paths or check git status output for the actual relative path shown",
+        "Downloading CI artifacts into e2e/artifacts/ (tracked convention) makes them available for local inspection without repeated gh CLI calls",
+        "Local reproduction of CI interactive session bugs is unreliable when the root cause is env-dependent (CI vars, missing auth config) — a targeted CI run on the fix branch is faster than trying to exactly replicate CI locally",
+        "When a retry mechanism false-positives, the excess retries can hit rate limits and cause more failures than the original bug — validate retry conditions tightly before shipping"
       ]
     },
     "friction": [
-      "Initial misdiagnosis: blamed prompt regex not matching Copilot v0.0.422 TUI; user had to redirect attention to the 'No copilot instructions found' message.",
-      "Second misdiagnosis: guessed CI/GITHUB_ACTIONS stripping would fix interactive timeouts; local test didn't reproduce but the fix happened to work in CI for unconfirmed reasons.",
-      "git reset --soft lost working tree edits (old_str retry logic) silently — required re-implementing and amending the commit.",
-      "User had to remind to download artifacts into e2e/artifacts/ rather than /tmp.",
-      "Multiple CI round-trips (5 triggered runs) needed to converge on root causes due to inability to reproduce CI environment locally.",
-      "False-positive retry caused a regression from 1 failure to 4 failures in one run, requiring an additional fix-and-rerun cycle."
+      "Initial misdiagnosis as prompt regex mismatch wasted one analysis pass; the 'No copilot instructions found' notice was the real signal",
+      "Three separate CI runs needed to isolate root causes because local reproduction was impossible for the CI/GITHUB_ACTIONS stripping issue",
+      "git reset --soft squash lost the old_str retry code added after the squash — required an amend commit to recover",
+      "Relative path confusion in worktree caused git add to fail silently (path shown as ../agents/copilot-cli.go instead of e2e/agents/copilot-cli.go)",
+      "False-positive transient retry introduced in one commit caused 4 failures instead of 1 before being caught and fixed in the next commit",
+      "CI artifact download commands needed to be re-issued with correct target directory after user pointed out the e2e/artifacts convention"
     ],
     "open_items": [
-      "TestLineAttributionReasonable failed due to a corrupted Copilot CLI installation (truncated index.js) on the runner — unrelated to the PR changes; expected to clear on rerun.",
-      "COPILOT_GITHUB_TOKEN appears in `ps` output via `env KEY=VAL` args — flagged by Copilot bot review; deferred as acceptable in ephemeral CI runners but worth revisiting for long-lived environments.",
-      "The gpt-4.1 Edit tool's 'old_str is required' flake is ultimately a model-side issue; the retry mechanism is a workaround, not a fix — worth tracking upstream with GitHub.",
-      "Final validation CI run (22749960064) showed 42/43; a full clean run to confirm 43/43 was still pending when session ended."
+      "Token visibility in ps output: COPILOT_GITHUB_TOKEN passed via 'env KEY=VAL ...' args is visible in process list — flagged by Copilot bot but accepted as test infra in ephemeral CI runners",
+      "PATH is forwarded redundantly (once by NewTmuxSession automatically, once by explicit envArgs) — cosmetic, harmless, but slightly confusing",
+      "TestPartialStaging and similar tests remain potentially flaky for copilot-cli due to gpt-4.1 model non-determinism on old_str; the retry mechanism mitigates but doesn't eliminate",
+      "PR #632 is open and pending merge — one more clean CI run was triggered (22750328570) at session end to confirm"
     ]
   }
 }
