@@ -18,5 +18,78 @@
   },
   "session_metrics": {
     "turn_count": 4
+  },
+  "summary": {
+    "intent": "Debug and fix 7 failing copilot-cli E2E tests from GitHub Actions run #22747075400, validate fixes via targeted CI runs, and land a clean PR.",
+    "outcome": "All 7 original failures fixed (5 interactive startup timeouts + 2 Edit tool failures), reaching 42/43 passing. PR #632 opened with a squashed commit covering 4 distinct fixes, plus a follow-up commit addressing review findings.",
+    "learnings": {
+      "repo": [
+        "NewTmuxSession in e2e/agents/tmux.go only forwards PATH automatically — all other env vars (auth tokens, HOME, TERM) must be explicitly passed via the args or they are silently dropped",
+        "Interactive tmux agents must unset CI and GITHUB_ACTIONS; Copilot CLI (and likely others) detect these and disable interactive mode",
+        "SetupRepo in e2e/testutil/repo.go has an agent-specific setup pattern (lines 70-87): droid gets settings, opencode gets config — copilot now gets .github/copilot-instructions.md",
+        "IsTransientError is only called when err != nil; silent exit-0 failures require the agent's RunPrompt to synthesize an error before the retry mechanism can fire",
+        "Copilot CLI v0.0.422 blocks/degrades in fresh repos without .github/copilot-instructions.md even in non-interactive (-p) mode",
+        "Copilot's gpt-4.1 may call Edit without old_str but then self-correct within the same session — retry must check for +0 -0 net changes to avoid false-positive restarts",
+        "CI artifacts should be downloaded to e2e/artifacts/ (project-local) not /tmp — this is the established convention"
+      ],
+      "code": [
+        {
+          "path": "e2e/agents/tmux.go",
+          "line": 37,
+          "end_line": 42,
+          "finding": "NewTmuxSession always prepends 'env PATH=\u003cvalue\u003e' to the tmux command, making any explicit PATH in envArgs redundant (double-forwarded, harmless but cosmetic)"
+        },
+        {
+          "path": "e2e/agents/copilot-cli.go",
+          "line": 43,
+          "end_line": 45,
+          "finding": "IsTransientError substring-matches combined stdout+stderr; 'old_str is required' added here as safety net, but the real gating condition lives in RunPrompt where both the error string and +0 -0 change count are checked together"
+        },
+        {
+          "path": "e2e/agents/copilot-cli.go",
+          "line": 110,
+          "end_line": 117,
+          "finding": "Pattern for surfacing silent exit-0 failures: check specific stdout+stderr combination and synthesize an error so the existing IsTransientError+errScenarioRestart mechanism can retry"
+        },
+        {
+          "path": "e2e/agents/copilot-cli.go",
+          "line": 132,
+          "end_line": 135,
+          "finding": "Env var forwarding loop that skips unset vars is unsafe for required vars like COPILOT_GITHUB_TOKEN — missing auth silently produces a session that fails late with a cryptic error; should fail-fast"
+        },
+        {
+          "path": "e2e/agents/copilot-cli.go",
+          "line": 162,
+          "end_line": 162,
+          "finding": "SendKeys error was silently discarded with _ = s.SendKeys('Enter') in startup loop — if tmux dies mid-loop, timeout error misdirects debugging toward prompt regex rather than the real cause"
+        },
+        {
+          "path": "e2e/testutil/repo.go",
+          "line": 80,
+          "end_line": 88,
+          "finding": "Agent-specific repo bootstrap block for copilot-cli: creates .github/copilot-instructions.md to prevent startup notice that blocks both interactive and non-interactive Copilot sessions"
+        }
+      ],
+      "workflow": [
+        "git reset --soft HEAD~N restores the index from those N commits, clobbering any newer unstaged working tree edits — always stage before squashing",
+        "Local reproduction of CI behavior is unreliable for environment-sensitive issues: CI/GITHUB_ACTIONS stripping appeared to have no effect locally but was the actual fix in CI",
+        "Node SEA (Single Executable Application) binaries can get truncated mid-download on GitHub Actions runners, causing SyntaxError: Unexpected end of input — a rerun clears it",
+        "When a transient retry fires on a scenario that partially succeeded (agent self-corrected), it burns through attempt budget and can trigger rate limits — always dual-gate retry conditions"
+      ]
+    },
+    "friction": [
+      "Three sequential misdiagnoses before finding root causes: prompt regex → model-only flake → TTY issue, before landing on missing copilot-instructions.md and CI env var detection",
+      "git reset --soft HEAD~4 clobbered the old_str retry code that was written after the reset; had to re-discover and re-apply the changes when the next CI run showed the retry never fired",
+      "Relative path issue: git add e2e/agents/copilot-cli.go failed in the worktree because the CWD resolved it as ../agents/copilot-cli.go",
+      "User had to ask twice to download artifacts to e2e/artifacts instead of /tmp",
+      "False-positive transient retry caused 4 failures in one CI run (worse than the 1 failure it was meant to fix) before the dual-condition gate was added",
+      "CI concurrency groups caused one run to appear to not fix anything — the fix was valid but the run conflicted with a queued job"
+    ],
+    "open_items": [
+      "TestRapidSequentialCommits showed 'expected at least 3 commits, got 2' in one run — possible timing flakiness with Copilot response speed, not investigated",
+      "COPILOT_GITHUB_TOKEN visible in ps output via 'env VAR=...' args (flagged by Copilot bot review) — acceptable for ephemeral CI runners but could be improved with a wrapper script",
+      "IsTransientError old_str pattern could theoretically false-positive if test file content contains that string — low risk but undocumented",
+      "PR #632 was open at session end; final CI validation run (22749960064) showed 42/43 with one corrupted-install flake, a rerun was queued"
+    ]
   }
 }
