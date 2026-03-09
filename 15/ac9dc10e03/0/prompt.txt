@@ -1,0 +1,201 @@
+Implement the following plan:
+
+# Fix E2E (and agent-integration) Plugin Subcommand Visibility
+
+## Context
+
+The `/e2e` skill works (auto-discovered from `.claude/skills/e2e/SKILL.md`), but subcommands like `/e2e:debug`, `/e2e:triage-ci`, `/e2e:implement` are invisible. They're defined as plugin commands in `.claude/plugins/e2e/commands/`, but local project plugins aren't auto-discovered — only marketplace-installed plugins get loaded.
+
+The `agent-integration` plugin has the same problem.
+
+The original plan's Step 1 (`/plugin marketplace add ./.claude/plugins/e2e`) failed because each individual plugin directory isn't a marketplace — a marketplace is a **container** with a `marketplace.json` that lists plugins.
+
+## Approach: Create a local marketplace wrapping both plugins
+
+A marketplace needs a `.claude-plugin/marketplace.json` file that catalogs plugins with relative source paths. We'll make `.claude/plugins/` itself a marketplace containing both plugins, then register it via `extraKnownMarketplaces` + `enabledPlugins` in `.claude/settings.json` so it's automatic for all team members.
+
+## Steps
+
+### 1. Create marketplace.json
+
+Create `.claude/plugins/.claude-plugin/marketplace.json`:
+
+```json
+{
+  "name": "entire-dev-tools",
+  "owner": {
+    "name": "Entire Team"
+  },
+  "plugins": [
+    {
+      "name": "e2e",
+      "source": "./e2e",
+      "description": "E2E test triage, debugging, and fix implementation toolkit"
+    },
+    {
+      "name": "agent-integration",
+      "source": "./agent-integration",
+      "description": "Multi-phase toolkit for integrating a new AI coding agent with the Entire CLI"
+    }
+  ]
+}
+```
+
+**Key**: The `source` paths are relative to the marketplace root (`.claude/plugins/`), pointing to the existing plugin directories.
+
+### 2. Register the marketplace in `.claude/settings.json`
+
+Add `extraKnownMarketplaces` and `enabledPlugins` to the existing project settings file:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "entire-dev-tools": {
+      "source": {
+        "source": "local",
+        "path": "./.claude/plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "e2e@entire-dev-tools": true,
+    "agent-integration@entire-dev-tools": true
+  },
+  // ... existing hooks, permissions ...
+}
+```
+
+**Note**: The `extraKnownMarketplaces` entry makes the marketplace known to Claude Code. The `enabledPlugins` entries auto-install both plugins with project scope so all team members get them.
+
+### 3. Run the marketplace add + install commands
+
+After creating the files, run these commands interactively to install the plugins:
+
+```
+/plugin marketplace add ./.claude/plugins
+/plugin install e2e@entire-dev-tools --scope project
+/plugin install agent-integration@entire-dev-tools --scope project
+```
+
+The `--scope project` flag writes to `.claude/settings.json`, which is checked into the repo.
+
+### 4. Verify plugin structure is correct
+
+The existing plugin structures already follow the correct pattern:
+
+```
+.claude/plugins/                          <- marketplace root
+├── .claude-plugin/
+│   └── marketplace.json                  <- NEW: marketplace catalog
+├── e2e/
+│   ├── .claude-plugin/plugin.json        <- existing
+│   ├── commands/
+│   │   ├── debug.md                      <- /e2e:debug
+│   │   ├── triage-ci.md                  <- /e2e:triage-ci
+│   │   └── implement.md                  <- /e2e:implement
+│   └── README.md
+└── agent-integration/
+    ├── .claude-plugin/plugin.json        <- existing
+    ├── commands/
+    │   ├── research.md                   <- /agent-integration:research
+    │   ├── write-tests.md                <- /agent-integration:write-tests
+    │   └── implement.md                  <- /agent-integration:implement
+    └── README.md
+```
+
+No changes needed to the existing plugin or command files.
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `.claude/plugins/.claude-plugin/marketplace.json` | **CREATE** | Marketplace catalog listing both plugins |
+| `.claude/settings.json` | **MODIFY** | Add `extraKnownMarketplaces` and `enabledPlugins` |
+
+## Verification
+
+1. After creating the marketplace.json and updating settings.json, run:
+   ```
+   /plugin marketplace add ./.claude/plugins
+   ```
+2. Then install:
+   ```
+   /plugin install e2e@entire-dev-tools --scope project
+   /plugin install agent-integration@entire-dev-tools --scope project
+   ```
+3. Start a new Claude Code session in this project
+4. Type `/e2e:` and verify tab-completion shows `e2e:debug`, `e2e:triage-ci`, `e2e:implement`
+5. Run `/e2e:debug` and verify it loads the procedure
+6. Type `/agent-integration:` and verify `research`, `write-tests`, `implement` appear
+7. Run `/agent-integration:research` and verify it loads the procedure
+
+## Fallback: If local marketplace doesn't work
+
+If the local path marketplace approach has issues (e.g., plugins are copied to cache and lose relative path references to `.claude/skills/`), we'll need to update the command `.md` files to use absolute paths or `$CLAUDE_PROJECT_DIR` references. The commands currently reference files like `.claude/skills/e2e/debug.md` — if the plugin is copied to a cache, this relative path won't resolve. In that case, change to:
+
+```markdown
+Read and follow the full procedure from `${CLAUDE_PROJECT_DIR}/.claude/skills/e2e/debug.md`.
+```
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/alisha/.claude/projects/-Users-alisha-Projects-devenv-cli/d27ce23a-1783-488b-9472-ae056628cd91.jsonl
+
+---
+
+why does the agent integration one have an *
+
+---
+
+[Image: source: /var/folders/5g/w6qvhr890pxfz9sg1l0d5c0r0000gn/T/TemporaryItems/NSIRD_screencaptureui_2JL8oC/Screenshot 2026-03-09 at 12.10.31 PM.png]
+
+---
+
+can you fix it so its auto trusted?
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+I just used the agent integration and it still has *. double check the plugin and compare to e2e plugin should be same
+
+---
+
+[Request interrupted by user for tool use]
+
+---
+
+commit and push
+
+---
+
+can you create a new branch and just put the @.claude/ changes on it
+
+---
+
+no its missing all the changes to the skills as well
+
+---
+
+[Image: source: /var/folders/5g/w6qvhr890pxfz9sg1l0d5c0r0000gn/T/TemporaryItems/NSIRD_screencaptureui_FsJRQD/Screenshot 2026-03-09 at 12.32.53 PM.png]
+
+---
+
+create draft pr
+
+---
+
+update https://github.com/entireio/cli/pull/667 overview add short summary of each of the new e2e commands
+
+---
+
+pull comments on https://github.com/entireio/cli/pull/667 and fix if its a real issue
+
+---
+
+commit and push
+
+---
+
+add scripts/download-e2e-artifacts.sh to alisha/local-plugin-marketplace and remove debug-e2e skill since that was moved to the e2e skill
