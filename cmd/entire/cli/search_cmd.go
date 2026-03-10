@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/entireio/cli/cmd/entire/cli/jsonutil"
 	"github.com/entireio/cli/cmd/entire/cli/search"
@@ -15,7 +14,6 @@ import (
 
 func newSearchCmd() *cobra.Command {
 	var (
-		jsonFlag   bool
 		branchFlag string
 		limitFlag  int
 	)
@@ -31,7 +29,9 @@ Requires a GitHub token for authentication. The token is resolved from:
   2. gh auth token (GitHub CLI)
 
 Results are ranked using Reciprocal Rank Fusion (RRF) combining
-OpenAI embeddings with BM25 full-text search.`,
+OpenAI embeddings with BM25 full-text search.
+
+Output is JSON by default for easy consumption by agents and scripts.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
@@ -72,10 +72,6 @@ OpenAI embeddings with BM25 full-text search.`,
 				return fmt.Errorf("parsing remote URL: %w", err)
 			}
 
-			if !jsonFlag {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Searching %s/%s for: %s\n", owner, repoName, query)
-			}
-
 			serviceURL := os.Getenv("ENTIRE_SEARCH_URL")
 			if serviceURL == "" {
 				serviceURL = search.DefaultServiceURL
@@ -95,60 +91,21 @@ OpenAI embeddings with BM25 full-text search.`,
 			}
 
 			if len(resp.Results) == 0 {
-				if jsonFlag {
-					fmt.Fprintln(cmd.OutOrStdout(), "[]")
-				} else {
-					fmt.Fprintln(cmd.OutOrStdout(), "No results found.")
-				}
+				fmt.Fprintln(cmd.OutOrStdout(), "[]")
 				return nil
 			}
 
-			if jsonFlag {
-				data, err := jsonutil.MarshalIndentWithNewline(resp.Results, "", "  ")
-				if err != nil {
-					return fmt.Errorf("marshaling results: %w", err)
-				}
-				fmt.Fprint(cmd.OutOrStdout(), string(data))
-				return nil
+			data, err := jsonutil.MarshalIndentWithNewline(resp.Results, "", "  ")
+			if err != nil {
+				return fmt.Errorf("marshaling results: %w", err)
 			}
-
-			// Pretty print
-			fmt.Fprintf(cmd.OutOrStdout(), "\nFound %d results for %s:\n\n", resp.Total, resp.Repo)
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "RANK\tCHECKPOINT\tSCORE\tMATCH\tBRANCH\tAUTHOR\tPROMPT")
-			for i, r := range resp.Results {
-				branch := truncateStr(r.Branch, 20)
-				author := "-"
-				if r.CommitAuthorUsername != nil {
-					author = *r.CommitAuthorUsername
-				} else if r.CommitAuthor != nil {
-					author = *r.CommitAuthor
-				}
-				prompt := "-"
-				if r.Prompt != nil {
-					prompt = truncateStr(*r.Prompt, 40)
-				}
-				fmt.Fprintf(w, "%d\t%s\t%.4f\t%s\t%s\t%s\t%s\n",
-					i+1, truncateStr(r.CheckpointID, 12), r.SearchMeta.RRFScore,
-					r.SearchMeta.MatchType, branch, author, prompt)
-			}
-			_ = w.Flush()
-			fmt.Fprintln(cmd.OutOrStdout())
-
+			fmt.Fprint(cmd.OutOrStdout(), string(data))
 			return nil
 		},
 	}
 
-	cmd.Flags().BoolVar(&jsonFlag, "json", false, "Output results as JSON")
 	cmd.Flags().StringVar(&branchFlag, "branch", "", "Filter results by branch name")
 	cmd.Flags().IntVar(&limitFlag, "limit", 20, "Maximum number of results")
 
 	return cmd
-}
-
-func truncateStr(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
 }
