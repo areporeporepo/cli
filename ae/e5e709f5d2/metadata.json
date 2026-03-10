@@ -1,0 +1,33 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "aee5e709f5d2",
+  "strategy": "manual-commit",
+  "branch": "soph/add-support-for-different-remote-for-checkpoints",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "cmd/entire/cli/settings/settings.go",
+    "cmd/entire/cli/setup.go",
+    "cmd/entire/cli/strategy/manual_commit_push.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/ae/e5e709f5d2/0/metadata.json",
+      "transcript": "/ae/e5e709f5d2/0/full.jsonl",
+      "content_hash": "/ae/e5e709f5d2/0/content_hash.txt",
+      "prompt": "/ae/e5e709f5d2/0/prompt.txt"
+    },
+    {
+      "metadata": "/ae/e5e709f5d2/1/metadata.json",
+      "transcript": "/ae/e5e709f5d2/1/full.jsonl",
+      "content_hash": "/ae/e5e709f5d2/1/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 30,
+    "cache_creation_tokens": 44619,
+    "cache_read_tokens": 1100626,
+    "output_tokens": 9263,
+    "api_call_count": 27
+  }
+}
