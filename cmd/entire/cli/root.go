@@ -84,6 +84,7 @@ func NewRootCmd() *cobra.Command {
 	cmd.AddCommand(newExplainCmd())
 	cmd.AddCommand(newDoctorCmd())
 	cmd.AddCommand(newTrailCmd())
+	cmd.AddCommand(newSearchCmd())
 	cmd.AddCommand(newSendAnalyticsCmd())
 	cmd.AddCommand(newCurlBashPostInstallCmd())
 
