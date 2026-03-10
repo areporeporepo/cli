@@ -85,7 +85,7 @@ func TestSearch_URLConstruction(t *testing.T) {
 		capturedReq = r
 		resp := Response{Results: []Result{}, Query: "test", Repo: "o/r", Total: 0}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck // test helper response
 	}))
 	defer srv.Close()
 
@@ -130,7 +130,7 @@ func TestSearch_NoBranchOmitsParam(t *testing.T) {
 		capturedReq = r
 		resp := Response{Results: []Result{}, Query: "q", Repo: "o/r", Total: 0}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck // test helper response
 	}))
 	defer srv.Close()
 
@@ -159,7 +159,7 @@ func TestSearch_ErrorJSON(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"}) //nolint:errcheck
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"}) //nolint:errcheck // test helper response
 	}))
 	defer srv.Close()
 
@@ -183,7 +183,7 @@ func TestSearch_ErrorRawBody(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadGateway)
-		w.Write([]byte("<html>Bad Gateway</html>")) //nolint:errcheck
+		w.Write([]byte("<html>Bad Gateway</html>")) //nolint:errcheck // test helper response
 	}))
 	defer srv.Close()
 
@@ -224,7 +224,7 @@ func TestSearch_SuccessWithResults(t *testing.T) {
 			Total: 1,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck // test helper response
 	}))
 	defer srv.Close()
 
