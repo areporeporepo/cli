@@ -15,21 +15,39 @@ const apiTimeout = 30 * time.Second
 // DefaultServiceURL is the production search service URL.
 const DefaultServiceURL = "https://entire.io"
 
+// SearchMeta contains search ranking metadata for a result.
+type SearchMeta struct {
+	RRFScore   float64 `json:"rrfScore"`
+	MatchType  string  `json:"matchType"`
+	VectorRank *int    `json:"vectorRank"`
+	BM25Rank   *int    `json:"bm25Rank"`
+}
+
 // Result represents a single search result from the search service.
 type Result struct {
-	CheckpointID  string  `json:"checkpoint_id"`
-	RRF           float64 `json:"rrf"`
-	VectorRank    *int    `json:"vectorRank"`
-	BM25Rank      *int    `json:"bm25Rank"`
-	MatchType     string  `json:"matchType"`
-	Branch        *string `json:"branch"`
-	Agent         *string `json:"agent"`
-	Author        *string `json:"author"`
-	CreatedAt     *string `json:"created_at"`
-	CommitSHA     *string `json:"commit_sha"`
-	CommitMessage *string `json:"commit_message"`
-	Prompt        *string `json:"prompt"`
-	FilesTouched  *string `json:"files_touched"`
+	CheckpointID         string      `json:"checkpointId"`
+	Branch               string      `json:"branch"`
+	CommitSHA            *string     `json:"commitSha"`
+	CommitMessage        *string     `json:"commitMessage"`
+	CommitAuthor         *string     `json:"commitAuthor"`
+	CommitAuthorUsername *string     `json:"commitAuthorUsername"`
+	CommitDate           *string     `json:"commitDate"`
+	Additions            int         `json:"additions"`
+	Deletions            int         `json:"deletions"`
+	FilesChanged         int         `json:"filesChanged"`
+	FilesTouched         []string    `json:"filesTouched"`
+	FileStats            interface{} `json:"fileStats"`
+	Prompt               *string     `json:"prompt"`
+	Agent                string      `json:"agent"`
+	Steps                int         `json:"steps"`
+	SessionCount         int         `json:"sessionCount"`
+	CreatedAt            string      `json:"createdAt"`
+	InputTokens          *int        `json:"inputTokens"`
+	OutputTokens         *int        `json:"outputTokens"`
+	CacheCreationTokens  *int        `json:"cacheCreationTokens"`
+	CacheReadTokens      *int        `json:"cacheReadTokens"`
+	APICallCount         *int        `json:"apiCallCount"`
+	SearchMeta           SearchMeta  `json:"searchMeta"`
 }
 
 // Response is the search service response.

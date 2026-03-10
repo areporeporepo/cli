@@ -117,20 +117,20 @@ OpenAI embeddings with BM25 full-text search.`,
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
 			fmt.Fprintln(w, "RANK\tCHECKPOINT\tSCORE\tMATCH\tBRANCH\tAUTHOR\tPROMPT")
 			for i, r := range resp.Results {
-				branch := "-"
-				if r.Branch != nil {
-					branch = truncateStr(*r.Branch, 20)
-				}
+				branch := truncateStr(r.Branch, 20)
 				author := "-"
-				if r.Author != nil {
-					author = *r.Author
+				if r.CommitAuthorUsername != nil {
+					author = *r.CommitAuthorUsername
+				} else if r.CommitAuthor != nil {
+					author = *r.CommitAuthor
 				}
 				prompt := "-"
 				if r.Prompt != nil {
 					prompt = truncateStr(*r.Prompt, 40)
 				}
 				fmt.Fprintf(w, "%d\t%s\t%.4f\t%s\t%s\t%s\t%s\n",
-					i+1, r.CheckpointID, r.RRF, r.MatchType, branch, author, prompt)
+					i+1, truncateStr(r.CheckpointID, 12), r.SearchMeta.RRFScore,
+					r.SearchMeta.MatchType, branch, author, prompt)
 			}
 			_ = w.Flush()
 			fmt.Fprintln(cmd.OutOrStdout())
