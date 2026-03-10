@@ -38,7 +38,7 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 			query := strings.Join(args, " ")
 
 			// Resolve GitHub token
-			ghToken := os.Getenv("GITHUB_TOKEN")
+			ghToken := strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
 			if ghToken == "" {
 				// Try gh CLI
 				out, err := exec.CommandContext(ctx, "gh", "auth", "token").Output()

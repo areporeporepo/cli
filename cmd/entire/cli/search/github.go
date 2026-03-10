@@ -23,12 +23,19 @@ func ParseGitHubRemote(remoteURL string) (owner, repo string, err error) {
 		if idx < 0 {
 			return "", "", fmt.Errorf("invalid SSH remote URL: %s", remoteURL)
 		}
+		host := remoteURL[len("git@"):idx]
+		if host != "github.com" {
+			return "", "", fmt.Errorf("remote is not a GitHub repository (host: %s)", host)
+		}
 		path = remoteURL[idx+1:]
 	} else {
 		// HTTPS format: https://github.com/owner/repo.git
 		u, parseErr := url.Parse(remoteURL)
 		if parseErr != nil {
 			return "", "", fmt.Errorf("parsing remote URL: %w", parseErr)
+		}
+		if u.Host != "github.com" {
+			return "", "", fmt.Errorf("remote is not a GitHub repository (host: %s)", u.Host)
 		}
 		path = strings.TrimPrefix(u.Path, "/")
 	}

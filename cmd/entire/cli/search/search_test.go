@@ -1,11 +1,17 @@
 package search
 
 import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
 const testOwner = "entirehq"
 const testRepo = "entire.io"
+
+// -- ParseGitHubRemote tests --
 
 func TestParseGitHubRemote_SSH(t *testing.T) {
 	t.Parallel()
@@ -50,5 +56,195 @@ func TestParseGitHubRemote_Invalid(t *testing.T) {
 	_, _, err = ParseGitHubRemote("not-a-url")
 	if err == nil {
 		t.Error("expected error for invalid URL")
+	}
+}
+
+func TestParseGitHubRemote_NonGitHubSSH(t *testing.T) {
+	t.Parallel()
+	_, _, err := ParseGitHubRemote("git@gitlab.com:entirehq/entire.io.git")
+	if err == nil {
+		t.Error("expected error for non-GitHub SSH remote")
+	}
+}
+
+func TestParseGitHubRemote_NonGitHubHTTPS(t *testing.T) {
+	t.Parallel()
+	_, _, err := ParseGitHubRemote("https://gitlab.com/entirehq/entire.io.git")
+	if err == nil {
+		t.Error("expected error for non-GitHub HTTPS remote")
+	}
+}
+
+// -- Search() tests --
+
+func TestSearch_URLConstruction(t *testing.T) {
+	t.Parallel()
+
+	var capturedReq *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedReq = r
+		resp := Response{Results: []Result{}, Query: "test", Repo: "o/r", Total: 0}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	_, err := Search(context.Background(), Config{
+		ServiceURL:  srv.URL,
+		GitHubToken: "ghp_test123",
+		Owner:       "myowner",
+		Repo:        "myrepo",
+		Query:       "find bugs",
+		Branch:      "main",
+		Limit:       10,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if capturedReq.URL.Path != "/search/v1/myowner/myrepo" {
+		t.Errorf("path = %s, want /search/v1/myowner/myrepo", capturedReq.URL.Path)
+	}
+	if capturedReq.URL.Query().Get("q") != "find bugs" {
+		t.Errorf("q = %s, want 'find bugs'", capturedReq.URL.Query().Get("q"))
+	}
+	if capturedReq.URL.Query().Get("branch") != "main" {
+		t.Errorf("branch = %s, want 'main'", capturedReq.URL.Query().Get("branch"))
+	}
+	if capturedReq.URL.Query().Get("limit") != "10" {
+		t.Errorf("limit = %s, want '10'", capturedReq.URL.Query().Get("limit"))
+	}
+	if capturedReq.Header.Get("Authorization") != "token ghp_test123" {
+		t.Errorf("auth header = %s, want 'token ghp_test123'", capturedReq.Header.Get("Authorization"))
+	}
+	if capturedReq.Header.Get("User-Agent") != "entire-cli" {
+		t.Errorf("user-agent = %s, want 'entire-cli'", capturedReq.Header.Get("User-Agent"))
+	}
+}
+
+func TestSearch_NoBranchOmitsParam(t *testing.T) {
+	t.Parallel()
+
+	var capturedReq *http.Request
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedReq = r
+		resp := Response{Results: []Result{}, Query: "q", Repo: "o/r", Total: 0}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	_, err := Search(context.Background(), Config{
+		ServiceURL:  srv.URL,
+		GitHubToken: "tok",
+		Owner:       "o",
+		Repo:        "r",
+		Query:       "q",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if capturedReq.URL.Query().Has("branch") {
+		t.Error("branch param should be omitted when empty")
+	}
+	if capturedReq.URL.Query().Has("limit") {
+		t.Error("limit param should be omitted when zero")
+	}
+}
+
+func TestSearch_ErrorJSON(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid token"}) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	_, err := Search(context.Background(), Config{
+		ServiceURL:  srv.URL,
+		GitHubToken: "bad",
+		Owner:       "o",
+		Repo:        "r",
+		Query:       "q",
+	})
+	if err == nil {
+		t.Fatal("expected error for 401")
+	}
+	if got := err.Error(); got != "search service error (401): Invalid token" {
+		t.Errorf("error = %q, want 'search service error (401): Invalid token'", got)
+	}
+}
+
+func TestSearch_ErrorRawBody(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte("<html>Bad Gateway</html>")) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	_, err := Search(context.Background(), Config{
+		ServiceURL:  srv.URL,
+		GitHubToken: "tok",
+		Owner:       "o",
+		Repo:        "r",
+		Query:       "q",
+	})
+	if err == nil {
+		t.Fatal("expected error for 502")
+	}
+	if got := err.Error(); got != "search service returned 502: <html>Bad Gateway</html>" {
+		t.Errorf("error = %q", got)
+	}
+}
+
+func TestSearch_SuccessWithResults(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		resp := Response{
+			Results: []Result{
+				{
+					CheckpointID: "abc123def456",
+					Branch:       "main",
+					Agent:        "Claude Code",
+					Steps:        3,
+					Meta: Meta{
+						RRFScore:  0.042,
+						MatchType: "both",
+					},
+				},
+			},
+			Query: "test",
+			Repo:  "o/r",
+			Total: 1,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+	}))
+	defer srv.Close()
+
+	resp, err := Search(context.Background(), Config{
+		ServiceURL:  srv.URL,
+		GitHubToken: "tok",
+		Owner:       "o",
+		Repo:        "r",
+		Query:       "test",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Results) != 1 {
+		t.Fatalf("got %d results, want 1", len(resp.Results))
+	}
+	if resp.Results[0].CheckpointID != "abc123def456" {
+		t.Errorf("checkpoint = %s, want abc123def456", resp.Results[0].CheckpointID)
+	}
+	if resp.Results[0].Meta.MatchType != "both" {
+		t.Errorf("matchType = %s, want both", resp.Results[0].Meta.MatchType)
 	}
 }
