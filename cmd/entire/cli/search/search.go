@@ -87,7 +87,7 @@ func Search(ctx context.Context, cfg Config) (*Response, error) {
 	req.Header.Set("User-Agent", "entire-cli")
 
 	client := &http.Client{}
-	resp, err := client.Do(req) //nolint:bodyclose,gosec // closed below; URL is constructed from trusted config
+	resp, err := client.Do(req) //nolint:gosec // URL is constructed from trusted config
 	if err != nil {
 		return nil, fmt.Errorf("calling search service: %w", err)
 	}
