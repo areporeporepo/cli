@@ -10,6 +10,7 @@ import (
 	"github.com/entireio/cli/cmd/entire/cli/jsonutil"
 	"github.com/entireio/cli/cmd/entire/cli/search"
 	"github.com/entireio/cli/cmd/entire/cli/strategy"
+	"github.com/entireio/cli/cmd/entire/cli/stringutil"
 	"github.com/spf13/cobra"
 )
 
@@ -113,7 +114,7 @@ OpenAI embeddings with BM25 full-text search.`,
 			}
 
 			// Pretty print
-			fmt.Fprintf(cmd.OutOrStdout(), "\nFound %d results for %s:\n\n", resp.Total, resp.Repo)
+			fmt.Fprintf(cmd.OutOrStdout(), "\nFound %d results for %s:\n\n", len(resp.Results), resp.Repo)
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
 			fmt.Fprintln(w, "RANK\tCHECKPOINT\tSCORE\tMATCH\tBRANCH\tAUTHOR\tPROMPT")
 			for i, r := range resp.Results {
@@ -147,8 +148,5 @@ OpenAI embeddings with BM25 full-text search.`,
 }
 
 func truncateStr(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
+	return stringutil.TruncateRunes(s, maxLen, "...")
 }
