@@ -164,8 +164,47 @@ Multiple AI sessions can run on the same commit. If you start a second session w
 | `entire reset`   | Delete the shadow branch and session state for the current HEAD commit                            |
 | `entire resume`  | Switch to a branch, restore latest checkpointed session metadata, and show command(s) to continue |
 | `entire rewind`  | Rewind to a previous checkpoint                                                                   |
+| `entire search`  | Search checkpoints using semantic and keyword matching                                             |
 | `entire status`  | Show current session info                                                                         |
 | `entire version` | Show Entire CLI version                                                                           |
+
+### `entire search`
+
+Search checkpoints across the current repository using hybrid search (semantic + keyword). Results are ranked using Reciprocal Rank Fusion (RRF), combining OpenAI embeddings with BM25 full-text search.
+
+```bash
+# Search with pretty-printed output
+entire search "implement login feature"
+
+# Filter by branch
+entire search "fix auth bug" --branch main
+
+# JSON output (for agent/script consumption)
+entire search "refactor database layer" --json
+
+# Limit results
+entire search "add tests" --limit 10
+```
+
+| Flag       | Description                          |
+| ---------- | ------------------------------------ |
+| `--json`   | Output results as JSON               |
+| `--branch` | Filter results by branch name        |
+| `--limit`  | Maximum number of results (default: 20) |
+
+**Authentication:** `entire search` requires a GitHub token to verify repo access. The token is resolved automatically from:
+
+1. `GITHUB_TOKEN` environment variable
+2. `gh auth token` (GitHub CLI, if installed)
+
+No other commands require a GitHub token — search is the only command that calls an external service.
+
+**Environment variables:**
+
+| Variable             | Description                                                |
+| -------------------- | ---------------------------------------------------------- |
+| `GITHUB_TOKEN`       | GitHub personal access token or fine-grained token         |
+| `ENTIRE_SEARCH_URL`  | Override the search service URL (default: `https://entire.io`) |
 
 ### `entire enable` Flags
 
