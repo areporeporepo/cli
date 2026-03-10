@@ -15,8 +15,8 @@ const apiTimeout = 30 * time.Second
 // DefaultServiceURL is the production search service URL.
 const DefaultServiceURL = "https://entire.io"
 
-// SearchMeta contains search ranking metadata for a result.
-type SearchMeta struct {
+// Meta contains search ranking metadata for a result.
+type Meta struct {
 	RRFScore   float64 `json:"rrfScore"`
 	MatchType  string  `json:"matchType"`
 	VectorRank *int    `json:"vectorRank"`
@@ -47,7 +47,7 @@ type Result struct {
 	CacheCreationTokens  *int        `json:"cacheCreationTokens"`
 	CacheReadTokens      *int        `json:"cacheReadTokens"`
 	APICallCount         *int        `json:"apiCallCount"`
-	SearchMeta           SearchMeta  `json:"searchMeta"`
+	Meta           Meta  `json:"searchMeta"`
 }
 
 // Response is the search service response.
