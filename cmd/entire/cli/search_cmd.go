@@ -132,7 +132,7 @@ OpenAI embeddings with BM25 full-text search.`,
 				fmt.Fprintf(w, "%d\t%s\t%.4f\t%s\t%s\t%s\t%s\n",
 					i+1, r.CheckpointID, r.RRF, r.MatchType, branch, author, prompt)
 			}
-			w.Flush()
+			_ = w.Flush()
 			fmt.Fprintln(cmd.OutOrStdout())
 
 			return nil
