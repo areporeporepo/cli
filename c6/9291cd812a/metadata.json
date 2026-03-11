@@ -1,0 +1,28 @@
+{
+  "cli_version": "v0.4.9-dev-03ab9832",
+  "checkpoint_id": "c69291cd812a",
+  "strategy": "manual-commit",
+  "branch": "feat/model-in-session-info",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "cmd/entire/cli/agent/geminicli/lifecycle.go",
+    "cmd/entire/cli/agent/geminicli/lifecycle_test.go",
+    "cmd/entire/cli/agent/geminicli/types.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c6/9291cd812a/0/metadata.json",
+      "transcript": "/c6/9291cd812a/0/full.jsonl",
+      "context": "/c6/9291cd812a/0/context.md",
+      "content_hash": "/c6/9291cd812a/0/content_hash.txt",
+      "prompt": "/c6/9291cd812a/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 135,
+    "cache_creation_tokens": 295462,
+    "cache_read_tokens": 13844678,
+    "output_tokens": 26954,
+    "api_call_count": 113
+  }
+}

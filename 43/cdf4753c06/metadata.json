@@ -908,13 +908,6 @@
       "context": "/43/cdf4753c06/0/context.md",
       "content_hash": "/43/cdf4753c06/0/content_hash.txt",
       "prompt": "/43/cdf4753c06/0/prompt.txt"
-    },
-    {
-      "metadata": "/43/cdf4753c06/1/metadata.json",
-      "transcript": "/43/cdf4753c06/1/full.jsonl",
-      "context": "",
-      "content_hash": "/43/cdf4753c06/1/content_hash.txt",
-      "prompt": ""
     }
   ],
   "token_usage": {
