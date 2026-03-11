@@ -29,9 +29,9 @@ const (
 	entireDir    = ".entire"
 	authFileName = "auth.json"
 
-	keyringService      = "entire-cli"
-	keyringTokenKey     = "github-token"
-	keyringUsernameKey  = "github-username"
+	keyringService     = "entire-cli"
+	keyringTokenKey    = "github-token"
+	keyringUsernameKey = "github-username"
 )
 
 // errNoAuth is returned by the file store when no auth file exists.
