@@ -23,28 +23,18 @@ func setupTempRepoDir(t *testing.T) (root, subsubdir string) {
 	return root, subsubdir
 }
 
-// chdirTo changes the process cwd and returns a cleanup function that restores it.
-func chdirTo(t *testing.T, dir string) func() {
+// chdirTo changes the process cwd for the duration of the test.
+// Restoration is handled automatically by t.Chdir.
+func chdirTo(t *testing.T, dir string) {
 	t.Helper()
-	orig, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("os.Getwd: %v", err)
-	}
-	if err := os.Chdir(dir); err != nil {
-		t.Fatalf("os.Chdir(%q): %v", dir, err)
-	}
-	return func() {
-		if err := os.Chdir(orig); err != nil {
-			t.Errorf("restoring cwd to %q: %v", orig, err)
-		}
-	}
+	t.Chdir(dir)
 }
 
 // TestAuthFilePathWalkUp verifies that authFilePath finds the .entire directory
 // by walking up from a nested subdirectory.
 func TestAuthFilePathWalkUp(t *testing.T) {
 	root, subsubdir := setupTempRepoDir(t)
-	defer chdirTo(t, subsubdir)()
+	chdirTo(t, subsubdir)
 
 	got, err := authFilePath()
 	if err != nil {
@@ -58,11 +48,11 @@ func TestAuthFilePathWalkUp(t *testing.T) {
 	// return different-looking but equivalent paths.
 	resolveDir := func(t *testing.T, p string) string {
 		t.Helper()
-		real, err := filepath.EvalSymlinks(filepath.Dir(p))
+		resolved, err := filepath.EvalSymlinks(filepath.Dir(p))
 		if err != nil {
 			t.Fatalf("EvalSymlinks(%q): %v", filepath.Dir(p), err)
 		}
-		return filepath.Join(real, filepath.Base(p))
+		return filepath.Join(resolved, filepath.Base(p))
 	}
 	if resolveDir(t, got) != resolveDir(t, want) {
 		t.Errorf("authFilePath() = %q, want %q", got, want)
@@ -73,7 +63,7 @@ func TestAuthFilePathWalkUp(t *testing.T) {
 // returns the same data.
 func TestReadWriteAuthRoundTrip(t *testing.T) {
 	_, subsubdir := setupTempRepoDir(t)
-	defer chdirTo(t, subsubdir)()
+	chdirTo(t, subsubdir)
 
 	in := &storedAuth{Token: "tok123", Username: "alice"}
 	if err := writeAuth(in); err != nil {
@@ -97,7 +87,7 @@ func TestReadWriteAuthRoundTrip(t *testing.T) {
 func TestGetStoredTokenNoFile(t *testing.T) {
 	// Use a temp dir with a .entire directory but no auth.json inside.
 	_, subsubdir := setupTempRepoDir(t)
-	defer chdirTo(t, subsubdir)()
+	chdirTo(t, subsubdir)
 
 	tok, err := GetStoredToken()
 	if err != nil {
@@ -112,7 +102,7 @@ func TestGetStoredTokenNoFile(t *testing.T) {
 // token and username in a single operation.
 func TestSetStoredAuthWritesBothFields(t *testing.T) {
 	_, subsubdir := setupTempRepoDir(t)
-	defer chdirTo(t, subsubdir)()
+	chdirTo(t, subsubdir)
 
 	if err := SetStoredAuth("mytoken", "bob"); err != nil {
 		t.Fatalf("SetStoredAuth: %v", err)
@@ -139,7 +129,7 @@ func TestSetStoredAuthWritesBothFields(t *testing.T) {
 // overwrite an existing username.
 func TestSetStoredTokenPreservesUsername(t *testing.T) {
 	_, subsubdir := setupTempRepoDir(t)
-	defer chdirTo(t, subsubdir)()
+	chdirTo(t, subsubdir)
 
 	// Pre-populate with a username.
 	if err := setStoredUsername("carol"); err != nil {
