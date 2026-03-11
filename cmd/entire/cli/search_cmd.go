@@ -24,9 +24,7 @@ func newSearchCmd() *cobra.Command {
 		Long: `Search checkpoints using hybrid search (semantic + keyword),
 powered by the Entire search service.
 
-Requires a GitHub token for authentication. The token is resolved from:
-  1. GITHUB_TOKEN environment variable
-  2. gh auth token (GitHub CLI)
+Requires authentication via 'entire login' (GitHub device flow).
 
 Results are ranked using Reciprocal Rank Fusion (RRF) combining
 OpenAI embeddings with BM25 full-text search.
@@ -37,10 +35,12 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 			ctx := cmd.Context()
 			query := strings.Join(args, " ")
 
-			// Resolve GitHub token (keychain → GITHUB_TOKEN → gh CLI)
-			ghToken, _, _ := auth.ResolveGitHubToken(ctx)
+			ghToken, err := auth.ResolveGitHubToken()
+			if err != nil {
+				return fmt.Errorf("reading credentials: %w", err)
+			}
 			if ghToken == "" {
-				return fmt.Errorf("GitHub token required. Run 'entire auth login', set GITHUB_TOKEN, or install gh CLI")
+				return fmt.Errorf("not authenticated. Run 'entire login' to authenticate with GitHub")
 			}
 
 			// Get the repo's GitHub remote URL

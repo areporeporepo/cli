@@ -108,9 +108,10 @@ func newAuthStatusCmd() *cobra.Command {
 		Use:   "auth-status",
 		Short: "Show current authentication status",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			ctx := cmd.Context()
-
-			token, source, _ := auth.ResolveGitHubToken(ctx)
+			token, err := auth.ResolveGitHubToken()
+			if err != nil {
+				return fmt.Errorf("reading stored credentials: %w", err)
+			}
 			if token == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), "Not authenticated.")
 				fmt.Fprintln(cmd.OutOrStdout(), "Run 'entire login' to authenticate with GitHub.")
@@ -119,13 +120,11 @@ func newAuthStatusCmd() *cobra.Command {
 
 			masked := token[:4] + strings.Repeat("*", 8) + token[len(token)-4:]
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Authenticated via %s\n", source)
+			fmt.Fprintf(cmd.OutOrStdout(), "Authenticated via %s\n", auth.SourceEntireDir)
 			fmt.Fprintf(cmd.OutOrStdout(), "Token: %s\n", masked)
 
-			if source == auth.SourceEntireDir {
-				if username, err := auth.GetStoredUsername(); err == nil && username != "" {
-					fmt.Fprintf(cmd.OutOrStdout(), "GitHub user: %s\n", username)
-				}
+			if username, err := auth.GetStoredUsername(); err == nil && username != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "GitHub user: %s\n", username)
 			}
 
 			return nil
