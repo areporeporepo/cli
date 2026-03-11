@@ -121,7 +121,7 @@ func newAuthStatusCmd() *cobra.Command {
 				masked = strings.Repeat("*", len(token))
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Authenticated via %s\n", auth.SourceEntireDir)
+			fmt.Fprintf(cmd.OutOrStdout(), "Authenticated via %s\n", auth.TokenSource())
 			fmt.Fprintf(cmd.OutOrStdout(), "Token: %s\n", masked)
 
 			if username, err := auth.GetStoredUsername(); err == nil && username != "" {

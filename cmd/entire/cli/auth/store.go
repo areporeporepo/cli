@@ -1,3 +1,11 @@
+// Package auth implements credential storage for the Entire CLI.
+//
+// By default tokens are stored in the OS keyring (macOS Keychain, Linux Secret
+// Service, Windows Credential Manager). Set ENTIRE_TOKEN_STORE=file to use a
+// JSON file instead, which is useful in CI environments that lack a keyring daemon.
+//
+// When using the file backend tokens are stored in .entire/auth.json, discovered
+// by walking up from the current working directory.
 package auth
 
 import (
@@ -7,26 +15,142 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-)
+	"sync"
 
-// SourceEntireDir is the display name for the device flow token source.
-const SourceEntireDir = ".entire/auth.json"
+	"github.com/zalando/go-keyring"
+)
 
 const (
+	// SourceEntireDir is the display name for the file-based token store.
+	SourceEntireDir = ".entire/auth.json"
+	// SourceKeyring is the display name for the OS keyring token store.
+	SourceKeyring = "OS keyring"
+
 	entireDir    = ".entire"
 	authFileName = "auth.json"
+
+	keyringService      = "entire-cli"
+	keyringTokenKey     = "github-token"
+	keyringUsernameKey  = "github-username"
 )
 
-// errNoAuth is returned by readAuth when no auth file exists.
+// errNoAuth is returned by the file store when no auth file exists.
 var errNoAuth = errors.New("no auth file")
+
+var (
+	once    sync.Once
+	backend tokenStore
+)
+
+// tokenStore is the interface for pluggable credential storage.
+type tokenStore interface {
+	GetToken() (string, error)
+	GetUsername() (string, error)
+	SetAuth(token, username string) error
+	DeleteAuth() error
+	Source() string
+}
+
+func resolveBackend() {
+	once.Do(func() {
+		if os.Getenv("ENTIRE_TOKEN_STORE") == "file" {
+			backend = fileTokenStore{}
+		} else {
+			backend = keyringTokenStore{}
+		}
+	})
+}
+
+// GetStoredToken retrieves the GitHub token. Returns ("", nil) if not stored.
+func GetStoredToken() (string, error) {
+	resolveBackend()
+	return backend.GetToken()
+}
+
+// GetStoredUsername retrieves the stored GitHub username. Returns ("", nil) if not stored.
+func GetStoredUsername() (string, error) {
+	resolveBackend()
+	return backend.GetUsername()
+}
+
+// SetStoredAuth stores both the GitHub token and username atomically.
+func SetStoredAuth(token, username string) error {
+	resolveBackend()
+	return backend.SetAuth(token, username)
+}
+
+// DeleteStoredToken removes all stored credentials.
+func DeleteStoredToken() error {
+	resolveBackend()
+	return backend.DeleteAuth()
+}
+
+// TokenSource returns the display name of the active credential store.
+func TokenSource() string {
+	resolveBackend()
+	return backend.Source()
+}
+
+// ─── Keyring backend ──────────────────────────────────────────────────────────
+
+type keyringTokenStore struct{}
+
+func (keyringTokenStore) GetToken() (string, error) {
+	tok, err := keyring.Get(keyringService, keyringTokenKey)
+	if errors.Is(err, keyring.ErrNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("reading token from keyring: %w", err)
+	}
+	return tok, nil
+}
+
+func (keyringTokenStore) GetUsername() (string, error) {
+	u, err := keyring.Get(keyringService, keyringUsernameKey)
+	if errors.Is(err, keyring.ErrNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("reading username from keyring: %w", err)
+	}
+	return u, nil
+}
+
+func (keyringTokenStore) SetAuth(token, username string) error {
+	if err := keyring.Set(keyringService, keyringTokenKey, token); err != nil {
+		return fmt.Errorf("storing token in keyring: %w", err)
+	}
+	if username != "" {
+		if err := keyring.Set(keyringService, keyringUsernameKey, username); err != nil {
+			return fmt.Errorf("storing username in keyring: %w", err)
+		}
+	}
+	return nil
+}
+
+func (keyringTokenStore) DeleteAuth() error {
+	if err := keyring.Delete(keyringService, keyringTokenKey); err != nil && !errors.Is(err, keyring.ErrNotFound) {
+		return fmt.Errorf("deleting token from keyring: %w", err)
+	}
+	if err := keyring.Delete(keyringService, keyringUsernameKey); err != nil && !errors.Is(err, keyring.ErrNotFound) {
+		return fmt.Errorf("deleting username from keyring: %w", err)
+	}
+	return nil
+}
+
+func (keyringTokenStore) Source() string { return SourceKeyring }
+
+// ─── File backend ─────────────────────────────────────────────────────────────
+
+type fileTokenStore struct{}
 
 type storedAuth struct {
 	Token    string `json:"token"`
 	Username string `json:"username,omitempty"`
 }
 
-// authFilePath returns the path to .entire/auth.json in the current repo root.
-// Walks up from cwd to find the .entire directory.
+// authFilePath returns the path to .entire/auth.json by walking up from cwd.
 func authFilePath() (string, error) {
 	dir, err := os.Getwd() //nolint:forbidigo // walks up to find .entire, handles subdirectory case explicitly
 	if err != nil {
@@ -38,7 +162,6 @@ func authFilePath() (string, error) {
 		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
 			return filepath.Join(candidate, authFileName), nil
 		}
-
 		parent := filepath.Dir(dir)
 		if parent == dir {
 			break
@@ -68,7 +191,6 @@ func readAuth() (*storedAuth, error) {
 	if err := json.Unmarshal(data, &a); err != nil {
 		return nil, fmt.Errorf("parsing auth file: %w", err)
 	}
-
 	return &a, nil
 }
 
@@ -78,9 +200,7 @@ func writeAuth(a *storedAuth) error {
 		return err
 	}
 
-	// Ensure .entire directory exists
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return fmt.Errorf("creating directory: %w", err)
 	}
 
@@ -92,13 +212,10 @@ func writeAuth(a *storedAuth) error {
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("writing auth file: %w", err)
 	}
-
 	return nil
 }
 
-// GetStoredToken retrieves the GitHub token from .entire/auth.json.
-// Returns ("", nil) if no token is stored.
-func GetStoredToken() (string, error) {
+func (fileTokenStore) GetToken() (string, error) {
 	a, err := readAuth()
 	if errors.Is(err, errNoAuth) {
 		return "", nil
@@ -109,21 +226,18 @@ func GetStoredToken() (string, error) {
 	return a.Token, nil
 }
 
-// setStoredToken stores the GitHub token in .entire/auth.json.
-func setStoredToken(token string) error {
+func (fileTokenStore) GetUsername() (string, error) {
 	a, err := readAuth()
-	if err != nil && !errors.Is(err, errNoAuth) {
-		return fmt.Errorf("reading existing auth: %w", err)
+	if errors.Is(err, errNoAuth) {
+		return "", nil
 	}
-	if a == nil {
-		a = &storedAuth{}
+	if err != nil {
+		return "", err
 	}
-	a.Token = token
-	return writeAuth(a)
+	return a.Username, nil
 }
 
-// SetStoredAuth stores both the GitHub token and username atomically in a single write.
-func SetStoredAuth(token, username string) error {
+func (fileTokenStore) SetAuth(token, username string) error {
 	a, err := readAuth()
 	if errors.Is(err, errNoAuth) || a == nil {
 		a = &storedAuth{}
@@ -135,8 +249,7 @@ func SetStoredAuth(token, username string) error {
 	return writeAuth(a)
 }
 
-// DeleteStoredToken removes the auth file.
-func DeleteStoredToken() error {
+func (fileTokenStore) DeleteAuth() error {
 	path, err := authFilePath()
 	if err != nil {
 		return err
@@ -148,28 +261,4 @@ func DeleteStoredToken() error {
 	return err //nolint:wrapcheck // os error is descriptive enough
 }
 
-// GetStoredUsername retrieves the stored GitHub username.
-// Returns ("", nil) if no username is stored.
-func GetStoredUsername() (string, error) {
-	a, err := readAuth()
-	if errors.Is(err, errNoAuth) {
-		return "", nil
-	}
-	if err != nil {
-		return "", err
-	}
-	return a.Username, nil
-}
-
-// setStoredUsername stores the GitHub username in .entire/auth.json.
-func setStoredUsername(username string) error {
-	a, err := readAuth()
-	if err != nil && !errors.Is(err, errNoAuth) {
-		return fmt.Errorf("reading existing auth: %w", err)
-	}
-	if a == nil {
-		a = &storedAuth{}
-	}
-	a.Username = username
-	return writeAuth(a)
-}
+func (fileTokenStore) Source() string { return SourceEntireDir }

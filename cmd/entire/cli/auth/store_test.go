@@ -3,8 +3,22 @@ package auth
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 )
+
+// TestMain forces the file backend for all tests. The keyring backend requires
+// an OS keyring daemon which is not available in CI or test environments.
+func TestMain(m *testing.M) {
+	os.Setenv("ENTIRE_TOKEN_STORE", "file") //nolint:errcheck,tenv // set before any test runs; intentional global
+	os.Exit(m.Run())
+}
+
+// resetBackend resets the backend singleton so each test starts with a clean slate.
+func resetBackend() {
+	once = sync.Once{}
+	backend = nil
+}
 
 // setupTempRepoDir creates a temp dir with a .entire subdirectory and returns:
 //   - the root of the temp dir (where .entire lives)
@@ -85,7 +99,7 @@ func TestReadWriteAuthRoundTrip(t *testing.T) {
 // TestGetStoredTokenNoFile verifies that GetStoredToken returns ("", nil) when
 // no auth file exists.
 func TestGetStoredTokenNoFile(t *testing.T) {
-	// Use a temp dir with a .entire directory but no auth.json inside.
+	resetBackend()
 	_, subsubdir := setupTempRepoDir(t)
 	chdirTo(t, subsubdir)
 
@@ -101,6 +115,7 @@ func TestGetStoredTokenNoFile(t *testing.T) {
 // TestSetStoredAuthWritesBothFields verifies that SetStoredAuth stores both
 // token and username in a single operation.
 func TestSetStoredAuthWritesBothFields(t *testing.T) {
+	resetBackend()
 	_, subsubdir := setupTempRepoDir(t)
 	chdirTo(t, subsubdir)
 
@@ -125,20 +140,29 @@ func TestSetStoredAuthWritesBothFields(t *testing.T) {
 	}
 }
 
-// TestSetStoredTokenPreservesUsername verifies that setStoredToken does not
-// overwrite an existing username.
-func TestSetStoredTokenPreservesUsername(t *testing.T) {
+// TestSetStoredAuthPreservesExistingUsername verifies that calling SetStoredAuth
+// with a new token still stores the username supplied in the same call.
+func TestSetStoredAuthPreservesExistingUsername(t *testing.T) {
+	resetBackend()
 	_, subsubdir := setupTempRepoDir(t)
 	chdirTo(t, subsubdir)
 
-	// Pre-populate with a username.
-	if err := setStoredUsername("carol"); err != nil {
-		t.Fatalf("setStoredUsername: %v", err)
+	// First login: both token and username.
+	if err := SetStoredAuth("token-v1", "carol"); err != nil {
+		t.Fatalf("SetStoredAuth (first): %v", err)
 	}
 
-	// Now set a token; username should be preserved.
-	if err := setStoredToken("newtoken"); err != nil {
-		t.Fatalf("setStoredToken: %v", err)
+	// Re-auth with a new token for the same user.
+	if err := SetStoredAuth("token-v2", "carol"); err != nil {
+		t.Fatalf("SetStoredAuth (second): %v", err)
+	}
+
+	tok, err := GetStoredToken()
+	if err != nil {
+		t.Fatalf("GetStoredToken: %v", err)
+	}
+	if tok != "token-v2" {
+		t.Errorf("token = %q, want %q", tok, "token-v2")
 	}
 
 	user, err := GetStoredUsername()
@@ -148,12 +172,13 @@ func TestSetStoredTokenPreservesUsername(t *testing.T) {
 	if user != "carol" {
 		t.Errorf("username = %q, want %q", user, "carol")
 	}
+}
 
-	tok, err := GetStoredToken()
-	if err != nil {
-		t.Fatalf("GetStoredToken: %v", err)
-	}
-	if tok != "newtoken" {
-		t.Errorf("token = %q, want %q", tok, "newtoken")
+// TestTokenSourceFileBackend verifies TokenSource returns the file backend name
+// when ENTIRE_TOKEN_STORE=file is set.
+func TestTokenSourceFileBackend(t *testing.T) {
+	resetBackend()
+	if got := TokenSource(); got != SourceEntireDir {
+		t.Errorf("TokenSource() = %q, want %q", got, SourceEntireDir)
 	}
 }
