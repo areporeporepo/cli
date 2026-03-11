@@ -10,7 +10,7 @@ import (
 // TestMain forces the file backend for all tests. The keyring backend requires
 // an OS keyring daemon which is not available in CI or test environments.
 func TestMain(m *testing.M) {
-	os.Setenv("ENTIRE_TOKEN_STORE", "file") //nolint:errcheck,tenv // set before any test runs; intentional global
+	os.Setenv("ENTIRE_TOKEN_STORE", "file") //nolint:tenv // set before any test runs; intentional global
 	os.Exit(m.Run())
 }
 

@@ -64,25 +64,25 @@ func resolveBackend() {
 // GetStoredToken retrieves the GitHub token. Returns ("", nil) if not stored.
 func GetStoredToken() (string, error) {
 	resolveBackend()
-	return backend.GetToken()
+	return backend.GetToken() //nolint:wrapcheck // thin wrapper; backends wrap their own errors
 }
 
 // GetStoredUsername retrieves the stored GitHub username. Returns ("", nil) if not stored.
 func GetStoredUsername() (string, error) {
 	resolveBackend()
-	return backend.GetUsername()
+	return backend.GetUsername() //nolint:wrapcheck // thin wrapper; backends wrap their own errors
 }
 
 // SetStoredAuth stores both the GitHub token and username atomically.
 func SetStoredAuth(token, username string) error {
 	resolveBackend()
-	return backend.SetAuth(token, username)
+	return backend.SetAuth(token, username) //nolint:wrapcheck // thin wrapper; backends wrap their own errors
 }
 
 // DeleteStoredToken removes all stored credentials.
 func DeleteStoredToken() error {
 	resolveBackend()
-	return backend.DeleteAuth()
+	return backend.DeleteAuth() //nolint:wrapcheck // thin wrapper; backends wrap their own errors
 }
 
 // TokenSource returns the display name of the active credential store.
