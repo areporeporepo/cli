@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 )
 
+// SourceEntireDir is the display name for the device flow token source.
+const SourceEntireDir = ".entire/auth.json"
+
 const (
 	entireDir    = ".entire"
 	authFileName = "auth.json"
@@ -106,8 +109,8 @@ func GetStoredToken() (string, error) {
 	return a.Token, nil
 }
 
-// SetStoredToken stores the GitHub token in .entire/auth.json.
-func SetStoredToken(token string) error {
+// setStoredToken stores the GitHub token in .entire/auth.json.
+func setStoredToken(token string) error {
 	a, err := readAuth()
 	if err != nil && !errors.Is(err, errNoAuth) {
 		return fmt.Errorf("reading existing auth: %w", err)
@@ -158,8 +161,8 @@ func GetStoredUsername() (string, error) {
 	return a.Username, nil
 }
 
-// SetStoredUsername stores the GitHub username in .entire/auth.json.
-func SetStoredUsername(username string) error {
+// setStoredUsername stores the GitHub username in .entire/auth.json.
+func setStoredUsername(username string) error {
 	a, err := readAuth()
 	if err != nil && !errors.Is(err, errNoAuth) {
 		return fmt.Errorf("reading existing auth: %w", err)

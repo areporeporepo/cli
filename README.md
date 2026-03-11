@@ -154,19 +154,30 @@ Multiple AI sessions can run on the same commit. If you start a second session w
 
 ## Commands Reference
 
-| Command          | Description                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------- |
-| `entire clean`   | Clean up orphaned Entire data                                                                     |
-| `entire disable` | Remove Entire hooks from repository                                                               |
-| `entire doctor`  | Fix or clean up stuck sessions                                                                    |
-| `entire enable`  | Enable Entire in your repository                                                                  |
-| `entire explain` | Explain a session or commit                                                                       |
-| `entire reset`   | Delete the shadow branch and session state for the current HEAD commit                            |
-| `entire resume`  | Switch to a branch, restore latest checkpointed session metadata, and show command(s) to continue |
-| `entire rewind`  | Rewind to a previous checkpoint                                                                   |
-| `entire search`  | Search checkpoints using semantic and keyword matching                                             |
-| `entire status`  | Show current session info                                                                         |
-| `entire version` | Show Entire CLI version                                                                           |
+| Command               | Description                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `entire auth-status`  | Show current authentication state and masked token                                                |
+| `entire clean`        | Clean up orphaned Entire data                                                                     |
+| `entire disable`      | Remove Entire hooks from repository                                                               |
+| `entire doctor`       | Fix or clean up stuck sessions                                                                    |
+| `entire enable`       | Enable Entire in your repository                                                                  |
+| `entire explain`      | Explain a session or commit                                                                       |
+| `entire login`        | Authenticate with GitHub via device flow; stores token in `.entire/auth.json`                    |
+| `entire logout`       | Remove stored credentials                                                                         |
+| `entire reset`        | Delete the shadow branch and session state for the current HEAD commit                            |
+| `entire resume`       | Switch to a branch, restore latest checkpointed session metadata, and show command(s) to continue |
+| `entire rewind`       | Rewind to a previous checkpoint                                                                   |
+| `entire search`       | Search checkpoints using semantic and keyword matching                                            |
+| `entire status`       | Show current session info                                                                         |
+| `entire version`      | Show Entire CLI version                                                                           |
+
+### Authentication
+
+`entire search` is the only command that calls an external service and therefore requires authentication. Use the following commands to manage your credentials:
+
+- **`entire login`** — authenticate with GitHub via device flow. Follow the printed URL and code to authorize in your browser. On success, your token is stored in `.entire/auth.json` and used automatically for subsequent `entire search` calls.
+- **`entire logout`** — remove stored credentials from `.entire/auth.json`. You will need to run `entire login` again before using `entire search`.
+- **`entire auth-status`** — display your current authentication state and a masked version of the stored token so you can confirm which account is active without exposing the full secret.
 
 ### `entire search`
 

@@ -135,20 +135,20 @@ func TestSetStoredAuthWritesBothFields(t *testing.T) {
 	}
 }
 
-// TestSetStoredTokenPreservesUsername verifies that SetStoredToken does not
+// TestSetStoredTokenPreservesUsername verifies that setStoredToken does not
 // overwrite an existing username.
 func TestSetStoredTokenPreservesUsername(t *testing.T) {
 	_, subsubdir := setupTempRepoDir(t)
 	defer chdirTo(t, subsubdir)()
 
 	// Pre-populate with a username.
-	if err := SetStoredUsername("carol"); err != nil {
-		t.Fatalf("SetStoredUsername: %v", err)
+	if err := setStoredUsername("carol"); err != nil {
+		t.Fatalf("setStoredUsername: %v", err)
 	}
 
 	// Now set a token; username should be preserved.
-	if err := SetStoredToken("newtoken"); err != nil {
-		t.Fatalf("SetStoredToken: %v", err)
+	if err := setStoredToken("newtoken"); err != nil {
+		t.Fatalf("setStoredToken: %v", err)
 	}
 
 	user, err := GetStoredUsername()

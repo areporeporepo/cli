@@ -69,7 +69,7 @@ func RequestDeviceCode(ctx context.Context, clientID string) (*DeviceCodeRespons
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
@@ -106,7 +106,7 @@ func pollForToken(ctx context.Context, clientID, deviceCode string) (*TokenRespo
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
@@ -217,8 +217,12 @@ func GetGitHubUser(ctx context.Context, token string) (*GitHubUser, error) {
 		return nil, fmt.Errorf("GitHub API error (%d)", resp.StatusCode)
 	}
 
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("reading response: %w", err)
+	}
 	var user GitHubUser
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+	if err := json.Unmarshal(body, &user); err != nil {
 		return nil, fmt.Errorf("parsing user: %w", err)
 	}
 
