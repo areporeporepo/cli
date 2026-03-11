@@ -1,0 +1,142 @@
+package auth
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+const (
+	entireDir    = ".entire"
+	authFileName = "auth.json"
+)
+
+type storedAuth struct {
+	Token    string `json:"token"`
+	Username string `json:"username,omitempty"`
+}
+
+// authFilePath returns the path to .entire/auth.json in the current repo root.
+// Walks up from cwd to find the .entire directory.
+func authFilePath() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("getting working directory: %w", err)
+	}
+
+	for {
+		candidate := filepath.Join(dir, entireDir)
+		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
+			return filepath.Join(candidate, authFileName), nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+
+	// Fall back to cwd/.entire/auth.json
+	return filepath.Join(entireDir, authFileName), nil
+}
+
+func readAuth() (*storedAuth, error) {
+	path, err := authFilePath()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := os.ReadFile(path) //nolint:gosec // reading from controlled .entire path
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("reading auth file: %w", err)
+	}
+
+	var a storedAuth
+	if err := json.Unmarshal(data, &a); err != nil {
+		return nil, fmt.Errorf("parsing auth file: %w", err)
+	}
+
+	return &a, nil
+}
+
+func writeAuth(a *storedAuth) error {
+	path, err := authFilePath()
+	if err != nil {
+		return err
+	}
+
+	// Ensure .entire directory exists
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return fmt.Errorf("creating directory: %w", err)
+	}
+
+	data, err := json.MarshalIndent(a, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling auth: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		return fmt.Errorf("writing auth file: %w", err)
+	}
+
+	return nil
+}
+
+// GetStoredToken retrieves the GitHub token from .entire/auth.json.
+// Returns ("", nil) if no token is stored.
+func GetStoredToken() (string, error) {
+	a, err := readAuth()
+	if err != nil || a == nil {
+		return "", err
+	}
+	return a.Token, nil
+}
+
+// SetStoredToken stores the GitHub token in .entire/auth.json.
+func SetStoredToken(token string) error {
+	a, _ := readAuth()
+	if a == nil {
+		a = &storedAuth{}
+	}
+	a.Token = token
+	return writeAuth(a)
+}
+
+// DeleteStoredToken removes the auth file.
+func DeleteStoredToken() error {
+	path, err := authFilePath()
+	if err != nil {
+		return err
+	}
+	err = os.Remove(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	return err //nolint:wrapcheck // os error is descriptive enough
+}
+
+// GetStoredUsername retrieves the stored GitHub username.
+// Returns ("", nil) if no username is stored.
+func GetStoredUsername() (string, error) {
+	a, err := readAuth()
+	if err != nil || a == nil {
+		return "", err
+	}
+	return a.Username, nil
+}
+
+// SetStoredUsername stores the GitHub username in .entire/auth.json.
+func SetStoredUsername(username string) error {
+	a, _ := readAuth()
+	if a == nil {
+		a = &storedAuth{}
+	}
+	a.Username = username
+	return writeAuth(a)
+}

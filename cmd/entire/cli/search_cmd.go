@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
+	"github.com/entireio/cli/cmd/entire/cli/auth"
 	"github.com/entireio/cli/cmd/entire/cli/jsonutil"
 	"github.com/entireio/cli/cmd/entire/cli/search"
 	"github.com/entireio/cli/cmd/entire/cli/strategy"
@@ -37,17 +37,10 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 			ctx := cmd.Context()
 			query := strings.Join(args, " ")
 
-			// Resolve GitHub token
-			ghToken := strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
+			// Resolve GitHub token (keychain → GITHUB_TOKEN → gh CLI)
+			ghToken, _, _ := auth.ResolveGitHubToken(ctx)
 			if ghToken == "" {
-				// Try gh CLI
-				out, err := exec.CommandContext(ctx, "gh", "auth", "token").Output()
-				if err == nil {
-					ghToken = strings.TrimSpace(string(out))
-				}
-			}
-			if ghToken == "" {
-				return fmt.Errorf("GitHub token required. Set GITHUB_TOKEN or install gh CLI (gh auth login)")
+				return fmt.Errorf("GitHub token required. Run 'entire auth login', set GITHUB_TOKEN, or install gh CLI")
 			}
 
 			// Get the repo's GitHub remote URL
