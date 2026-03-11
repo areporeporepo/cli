@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,9 @@ const (
 	authFileName = "auth.json"
 )
 
+// errNoAuth is returned by readAuth when no auth file exists.
+var errNoAuth = errors.New("no auth file")
+
 type storedAuth struct {
 	Token    string `json:"token"`
 	Username string `json:"username,omitempty"`
@@ -20,7 +24,7 @@ type storedAuth struct {
 // authFilePath returns the path to .entire/auth.json in the current repo root.
 // Walks up from cwd to find the .entire directory.
 func authFilePath() (string, error) {
-	dir, err := os.Getwd()
+	dir, err := os.Getwd() //nolint:forbidigo // walks up to find .entire, handles subdirectory case explicitly
 	if err != nil {
 		return "", fmt.Errorf("getting working directory: %w", err)
 	}
@@ -50,7 +54,7 @@ func readAuth() (*storedAuth, error) {
 
 	data, err := os.ReadFile(path) //nolint:gosec // reading from controlled .entire path
 	if os.IsNotExist(err) {
-		return nil, nil
+		return nil, errNoAuth
 	}
 	if err != nil {
 		return nil, fmt.Errorf("reading auth file: %w", err)
@@ -92,7 +96,10 @@ func writeAuth(a *storedAuth) error {
 // Returns ("", nil) if no token is stored.
 func GetStoredToken() (string, error) {
 	a, err := readAuth()
-	if err != nil || a == nil {
+	if errors.Is(err, errNoAuth) {
+		return "", nil
+	}
+	if err != nil {
 		return "", err
 	}
 	return a.Token, nil
@@ -100,7 +107,10 @@ func GetStoredToken() (string, error) {
 
 // SetStoredToken stores the GitHub token in .entire/auth.json.
 func SetStoredToken(token string) error {
-	a, _ := readAuth()
+	a, err := readAuth()
+	if err != nil && !errors.Is(err, errNoAuth) {
+		return fmt.Errorf("reading existing auth: %w", err)
+	}
 	if a == nil {
 		a = &storedAuth{}
 	}
@@ -125,7 +135,10 @@ func DeleteStoredToken() error {
 // Returns ("", nil) if no username is stored.
 func GetStoredUsername() (string, error) {
 	a, err := readAuth()
-	if err != nil || a == nil {
+	if errors.Is(err, errNoAuth) {
+		return "", nil
+	}
+	if err != nil {
 		return "", err
 	}
 	return a.Username, nil
@@ -133,7 +146,10 @@ func GetStoredUsername() (string, error) {
 
 // SetStoredUsername stores the GitHub username in .entire/auth.json.
 func SetStoredUsername(username string) error {
-	a, _ := readAuth()
+	a, err := readAuth()
+	if err != nil && !errors.Is(err, errNoAuth) {
+		return fmt.Errorf("reading existing auth: %w", err)
+	}
 	if a == nil {
 		a = &storedAuth{}
 	}

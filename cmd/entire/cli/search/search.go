@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -93,7 +94,7 @@ func Search(ctx context.Context, cfg Config) (*Response, error) {
 		q.Set("branch", cfg.Branch)
 	}
 	if cfg.Limit > 0 {
-		q.Set("limit", fmt.Sprintf("%d", cfg.Limit))
+		q.Set("limit", strconv.Itoa(cfg.Limit))
 	}
 	u.RawQuery = q.Encode()
 

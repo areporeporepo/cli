@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -40,7 +41,7 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 				return fmt.Errorf("reading credentials: %w", err)
 			}
 			if ghToken == "" {
-				return fmt.Errorf("not authenticated. Run 'entire login' to authenticate with GitHub")
+				return errors.New("not authenticated. Run 'entire login' to authenticate with GitHub")
 			}
 
 			// Get the repo's GitHub remote URL
@@ -57,7 +58,7 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 			}
 			urls := remote.Config().URLs
 			if len(urls) == 0 {
-				return fmt.Errorf("origin remote has no URLs configured")
+				return errors.New("origin remote has no URLs configured")
 			}
 
 			owner, repoName, err := search.ParseGitHubRemote(urls[0])

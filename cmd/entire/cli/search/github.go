@@ -2,6 +2,7 @@
 package search
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -12,7 +13,7 @@ import (
 func ParseGitHubRemote(remoteURL string) (owner, repo string, err error) {
 	remoteURL = strings.TrimSpace(remoteURL)
 	if remoteURL == "" {
-		return "", "", fmt.Errorf("empty remote URL")
+		return "", "", errors.New("empty remote URL")
 	}
 
 	var path string

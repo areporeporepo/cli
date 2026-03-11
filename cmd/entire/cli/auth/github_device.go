@@ -15,7 +15,7 @@ import (
 
 const (
 	githubDeviceCodeURL = "https://github.com/login/device/code"
-	githubTokenURL      = "https://github.com/login/oauth/access_token"
+	githubTokenURL      = "https://github.com/login/oauth/access_token" //nolint:gosec // G101: OAuth endpoint URL, not a credential
 	githubUserURL       = "https://api.github.com/user"
 
 	// Scopes: read:user for identity, repo for private repo access checks.
@@ -34,7 +34,7 @@ type DeviceCodeResponse struct {
 
 // TokenResponse is the response from GitHub's token endpoint.
 type TokenResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessToken string `json:"access_token"` //nolint:gosec // G117: field holds an OAuth token, pattern match is a false positive
 	TokenType   string `json:"token_type"`
 	Scope       string `json:"scope"`
 }
@@ -128,7 +128,10 @@ func PollForToken(ctx context.Context, clientID, deviceCode string) (*TokenRespo
 		case "access_denied":
 			return nil, ErrAccessDenied
 		default:
-			desc, _ := raw["error_description"].(string)
+			var desc string
+			if d, ok := raw["error_description"].(string); ok {
+				desc = d
+			}
 			return nil, fmt.Errorf("token request failed: %s - %s", errStr, desc)
 		}
 	}
@@ -139,7 +142,7 @@ func PollForToken(ctx context.Context, clientID, deviceCode string) (*TokenRespo
 	}
 
 	if tokenResp.AccessToken == "" {
-		return nil, fmt.Errorf("empty access token in response")
+		return nil, errors.New("empty access token in response")
 	}
 
 	return &tokenResp, nil
