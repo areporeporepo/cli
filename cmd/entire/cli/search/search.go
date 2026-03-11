@@ -47,7 +47,7 @@ type Result struct {
 	CacheCreationTokens  *int        `json:"cacheCreationTokens"`
 	CacheReadTokens      *int        `json:"cacheReadTokens"`
 	APICallCount         *int        `json:"apiCallCount"`
-	Meta           Meta  `json:"searchMeta"`
+	Meta                 Meta        `json:"searchMeta"`
 }
 
 // Response is the search service response.
