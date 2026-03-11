@@ -55,12 +55,11 @@ The token is stored in .entire/auth.json and scoped to repo metadata access.`,
 
 			fmt.Fprintf(cmd.ErrOrStderr(), "Waiting for authorization...\n")
 
-			interval := max(deviceResp.Interval, 5)
 			tokenResp, err := auth.WaitForAuthorization(
 				ctx,
 				clientID,
 				deviceResp.DeviceCode,
-				secondsToDuration(interval),
+				secondsToDuration(deviceResp.Interval),
 				secondsToDuration(deviceResp.ExpiresIn),
 			)
 			if err != nil {
@@ -72,11 +71,8 @@ The token is stored in .entire/auth.json and scoped to repo metadata access.`,
 				return fmt.Errorf("fetching user info: %w", err)
 			}
 
-			if err := auth.SetStoredToken(tokenResp.AccessToken); err != nil {
-				return fmt.Errorf("storing token: %w", err)
-			}
-			if err := auth.SetStoredUsername(user.Login); err != nil {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Warning: could not store username: %v\n", err)
+			if err := auth.SetStoredAuth(tokenResp.AccessToken, user.Login); err != nil {
+				return fmt.Errorf("storing credentials: %w", err)
 			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Logged in as %s\n", user.Login)
@@ -108,7 +104,7 @@ func newAuthStatusCmd() *cobra.Command {
 		Use:   "auth-status",
 		Short: "Show current authentication status",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			token, err := auth.ResolveGitHubToken()
+			token, err := auth.GetStoredToken()
 			if err != nil {
 				return fmt.Errorf("reading stored credentials: %w", err)
 			}
@@ -118,7 +114,12 @@ func newAuthStatusCmd() *cobra.Command {
 				return nil
 			}
 
-			masked := token[:4] + strings.Repeat("*", 8) + token[len(token)-4:]
+			var masked string
+			if len(token) > 8 {
+				masked = token[:4] + strings.Repeat("*", len(token)-8) + token[len(token)-4:]
+			} else {
+				masked = strings.Repeat("*", len(token))
+			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Authenticated via %s\n", auth.SourceEntireDir)
 			fmt.Fprintf(cmd.OutOrStdout(), "Token: %s\n", masked)

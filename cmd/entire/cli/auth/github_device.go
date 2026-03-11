@@ -86,8 +86,8 @@ func RequestDeviceCode(ctx context.Context, clientID string) (*DeviceCodeRespons
 	return &deviceResp, nil
 }
 
-// PollForToken polls GitHub's token endpoint once.
-func PollForToken(ctx context.Context, clientID, deviceCode string) (*TokenResponse, error) {
+// pollForToken polls GitHub's token endpoint once.
+func pollForToken(ctx context.Context, clientID, deviceCode string) (*TokenResponse, error) {
 	form := url.Values{}
 	form.Set("client_id", clientID)
 	form.Set("device_code", deviceCode)
@@ -150,6 +150,9 @@ func PollForToken(ctx context.Context, clientID, deviceCode string) (*TokenRespo
 
 // WaitForAuthorization polls until the user authorizes or the code expires.
 func WaitForAuthorization(ctx context.Context, clientID, deviceCode string, interval, expiresIn time.Duration) (*TokenResponse, error) {
+	if interval < 5*time.Second {
+		interval = 5 * time.Second
+	}
 	deadline := time.Now().Add(expiresIn)
 	currentInterval := interval
 
@@ -164,7 +167,7 @@ func WaitForAuthorization(ctx context.Context, clientID, deviceCode string, inte
 			return nil, ErrDeviceCodeExpired
 		}
 
-		tokenResp, err := PollForToken(ctx, clientID, deviceCode)
+		tokenResp, err := pollForToken(ctx, clientID, deviceCode)
 		if err == nil {
 			return tokenResp, nil
 		}

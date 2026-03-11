@@ -179,31 +179,23 @@ entire search "implement login feature"
 # Filter by branch
 entire search "fix auth bug" --branch main
 
-# JSON output (for agent/script consumption)
-entire search "refactor database layer" --json
-
 # Limit results
 entire search "add tests" --limit 10
 ```
 
 | Flag       | Description                          |
 | ---------- | ------------------------------------ |
-| `--json`   | Output results as JSON               |
 | `--branch` | Filter results by branch name        |
 | `--limit`  | Maximum number of results (default: 20) |
 
-**Authentication:** `entire search` requires a GitHub token to verify repo access. The token is resolved automatically from:
+**Authentication:** `entire search` requires authentication. Run `entire login` first to authenticate via GitHub device flow — your token is stored in `.entire/auth.json` and used automatically.
 
-1. `GITHUB_TOKEN` environment variable
-2. `gh auth token` (GitHub CLI, if installed)
-
-No other commands require a GitHub token — search is the only command that calls an external service.
+No other commands require authentication — search is the only command that calls an external service.
 
 **Environment variables:**
 
 | Variable             | Description                                                |
 | -------------------- | ---------------------------------------------------------- |
-| `GITHUB_TOKEN`       | GitHub personal access token or fine-grained token         |
 | `ENTIRE_SEARCH_URL`  | Override the search service URL (default: `https://entire.io`) |
 
 ### `entire enable` Flags

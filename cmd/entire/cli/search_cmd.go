@@ -36,7 +36,7 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 			ctx := cmd.Context()
 			query := strings.Join(args, " ")
 
-			ghToken, err := auth.ResolveGitHubToken()
+			ghToken, err := auth.GetStoredToken()
 			if err != nil {
 				return fmt.Errorf("reading credentials: %w", err)
 			}

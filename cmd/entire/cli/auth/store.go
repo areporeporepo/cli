@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -53,7 +54,7 @@ func readAuth() (*storedAuth, error) {
 	}
 
 	data, err := os.ReadFile(path) //nolint:gosec // reading from controlled .entire path
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil, errNoAuth
 	}
 	if err != nil {
@@ -118,6 +119,19 @@ func SetStoredToken(token string) error {
 	return writeAuth(a)
 }
 
+// SetStoredAuth stores both the GitHub token and username atomically in a single write.
+func SetStoredAuth(token, username string) error {
+	a, err := readAuth()
+	if errors.Is(err, errNoAuth) || a == nil {
+		a = &storedAuth{}
+	} else if err != nil {
+		return fmt.Errorf("reading existing auth: %w", err)
+	}
+	a.Token = token
+	a.Username = username
+	return writeAuth(a)
+}
+
 // DeleteStoredToken removes the auth file.
 func DeleteStoredToken() error {
 	path, err := authFilePath()
@@ -125,7 +139,7 @@ func DeleteStoredToken() error {
 		return err
 	}
 	err = os.Remove(path)
-	if os.IsNotExist(err) {
+	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	return err //nolint:wrapcheck // os error is descriptive enough
