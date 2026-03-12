@@ -1,0 +1,25 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "c175a1a3a7c5",
+  "session_id": "test",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-11T17:18:42.678354Z",
+  "branch": "cli_search",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/auth/resolve.go",
+    "cmd/entire/cli/auth_cmd.go",
+    "cmd/entire/cli/search_cmd.go"
+  ],
+  "agent": "Mock Lifecycle Agent",
+  "turn_id": "3760ae68f15e",
+  "initial_attribution": {
+    "calculated_at": "2026-03-11T17:18:42.677423Z",
+    "agent_lines": 22,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 22,
+    "agent_percentage": 100
+  }
+}

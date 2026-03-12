@@ -15,13 +15,6 @@
       "context": "/27/bbbac46736/0/context.md",
       "content_hash": "/27/bbbac46736/0/content_hash.txt",
       "prompt": "/27/bbbac46736/0/prompt.txt"
-    },
-    {
-      "metadata": "/27/bbbac46736/1/metadata.json",
-      "transcript": "/27/bbbac46736/1/full.jsonl",
-      "context": "",
-      "content_hash": "/27/bbbac46736/1/content_hash.txt",
-      "prompt": ""
     }
   ],
   "token_usage": {

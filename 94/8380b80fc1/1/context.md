@@ -1,0 +1,8 @@
+# Session Context
+
+## User Prompts
+
+### Prompt 1
+
+can you tell me how I could use either the session logs or better our cli logs to figure out how long a prompt did run?
+
