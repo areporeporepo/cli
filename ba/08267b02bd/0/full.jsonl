@@ -13,7 +13,7 @@
     },
     "time": {
       "created": 1773272328845,
-      "updated": 1773275897481
+      "updated": 1773275930230
     }
   },
   "messages": [
@@ -10391,7 +10391,8 @@
       "info": {
         "role": "assistant",
         "time": {
-          "created": 1773275897283
+          "created": 1773275897283,
+          "completed": 1773275908416
         },
         "parentID": "msg_cdf7ab17b001yJb26VqukInk3t",
         "modelID": "gpt-5.3-codex",
@@ -10404,14 +10405,16 @@
         },
         "cost": 0,
         "tokens": {
-          "input": 0,
-          "output": 0,
-          "reasoning": 0,
+          "total": 135032,
+          "input": 675,
+          "output": 341,
+          "reasoning": 208,
           "cache": {
-            "read": 0,
+            "read": 134016,
             "write": 0
           }
         },
+        "finish": "tool-calls",
         "id": "msg_cdf7addc3001yg79NEXonjIGpQ",
         "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8"
       },
@@ -10445,14 +10448,23 @@
           "callID": "call_avPXhzXaCbZUaGipQFV9gP4k",
           "tool": "bash",
           "state": {
-            "status": "running",
+            "status": "completed",
             "input": {
               "command": "git add \"cmd/entire/cli/profile.go\" \"cmd/entire/cli/profile_test.go\" \"cmd/entire/cli/root.go\" && git commit -m \"feat: add profile command for turn timing\" -m \"Add entire profile with --checkpoint, --session, and --commit selectors to measure per-turn response durations from checkpoint transcripts, including temporary session fallback for active work.\" && git status --short",
               "workdir": "/Users/thomi/Projects/entire-cli",
               "description": "Stage profile changes, commit, and show status"
             },
+            "output": "[ashtom/profiling 2369af22] feat: add profile command for turn timing\n 3 files changed, 892 insertions(+)\n create mode 100644 cmd/entire/cli/profile.go\n create mode 100644 cmd/entire/cli/profile_test.go\n?? .opencode/\n",
+            "title": "Stage profile changes, commit, and show status",
+            "metadata": {
+              "output": "[ashtom/profiling 2369af22] feat: add profile command for turn timing\n 3 files changed, 892 insertions(+)\n create mode 100644 cmd/entire/cli/profile.go\n create mode 100644 cmd/entire/cli/profile_test.go\n?? .opencode/\n",
+              "exit": 0,
+              "description": "Stage profile changes, commit, and show status",
+              "truncated": false
+            },
             "time": {
-              "start": 1773275905275
+              "start": 1773275905275,
+              "end": 1773275908221
             }
           },
           "metadata": {
@@ -10463,6 +10475,338 @@
           "id": "REDACTED",
           "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
           "messageID": "msg_cdf7addc3001yg79NEXonjIGpQ"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "cost": 0,
+          "tokens": {
+            "total": 135032,
+            "input": 675,
+            "output": 341,
+            "reasoning": 208,
+            "cache": {
+              "read": 134016,
+              "write": 0
+            }
+          },
+          "id": "prt_cdf7b087e001g5esTJd7XPM2P4",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7addc3001yg79NEXonjIGpQ"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773275908422,
+          "completed": 1773275915014
+        },
+        "parentID": "msg_cdf7ab17b001yJb26VqukInk3t",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/thomi/Projects/entire-cli",
+          "root": "/Users/thomi/Projects/entire-cli"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 135216,
+          "input": 198,
+          "output": 106,
+          "reasoning": 60,
+          "cache": {
+            "read": 134912,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cdf7b0946001Bf5UMD16u5Y0Sa",
+        "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "id": "prt_cdf7b0f3c001KVsZtQYva4F0Gs",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b0946001Bf5UMD16u5Y0Sa"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Checking branch status before push**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0242b6028520b5090169b20b08176881918f316347888e2d9d",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1773275912099,
+            "end": 1773275914213
+          },
+          "id": "prt_cdf7b17a3001wt5ZShyCnbjvba",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b0946001Bf5UMD16u5Y0Sa"
+        },
+        {
+          "type": "tool",
+          "callID": "call_H6HT7z5MWxPVCOryP227xh2x",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git status -sb",
+              "workdir": "/Users/thomi/Projects/entire-cli",
+              "description": "Check branch ahead status before push"
+            },
+            "output": "## ashtom/profiling\n?? .opencode/\n",
+            "title": "Check branch ahead status before push",
+            "metadata": {
+              "output": "## ashtom/profiling\n?? .opencode/\n",
+              "exit": 0,
+              "description": "Check branch ahead status before push",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773275914767,
+              "end": 1773275914817
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0242b6028520b5090169b20b0a2e8c81918d2d8c130f76c615"
+            }
+          },
+          "id": "prt_cdf7b1fe6001JyZVSsbXLUmxbr",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b0946001Bf5UMD16u5Y0Sa"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "cost": 0,
+          "tokens": {
+            "total": 135216,
+            "input": 198,
+            "output": 106,
+            "reasoning": 60,
+            "cache": {
+              "read": 134912,
+              "write": 0
+            }
+          },
+          "id": "prt_cdf7b2241001JYcIzGRBIzKrim",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b0946001Bf5UMD16u5Y0Sa"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773275915021,
+          "completed": 1773275930026
+        },
+        "parentID": "msg_cdf7ab17b001yJb26VqukInk3t",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/thomi/Projects/entire-cli",
+          "root": "/Users/thomi/Projects/entire-cli"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 135314,
+          "input": 200,
+          "output": 74,
+          "reasoning": 21,
+          "cache": {
+            "read": 135040,
+            "write": 0
+          }
+        },
+        "finish": "tool-calls",
+        "id": "msg_cdf7b230d001xJdskrWAnfUavc",
+        "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "id": "prt_cdf7b2be5001JbwdK1ozCzEltJ",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b230d001xJdskrWAnfUavc"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Setting upstream for push**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0b2e148ec50061310169b20b0f87f081919732e1e9c514773c",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1773275919538,
+            "end": 1773275921014
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b230d001xJdskrWAnfUavc"
+        },
+        {
+          "type": "tool",
+          "callID": "call_mhnUemFSiS44wP4bWBNoyGBA",
+          "tool": "bash",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "git push -u origin ashtom/profiling",
+              "workdir": "/Users/thomi/Projects/entire-cli",
+              "description": "Push new branch and set upstream"
+            },
+            "output": "[entire] Pushing entire/checkpoints/v1 to origin...\nremote: \nremote: Create a pull request for 'ashtom/profiling' on GitHub by visiting:        \nremote:      https://github.com/entireio/cli/pull/new/ashtom/profiling        \nremote: \nTo github.com:entireio/cli.git\n * [new branch]        ashtom/profiling -> ashtom/profiling\nBranch 'ashtom/profiling' set up to track remote branch 'ashtom/profiling' from 'origin'.\n",
+            "title": "Push new branch and set upstream",
+            "metadata": {
+              "output": "[entire] Pushing entire/checkpoints/v1 to origin...\nremote: \nremote: Create a pull request for 'ashtom/profiling' on GitHub by visiting:        \nremote:      https://github.com/entireio/cli/pull/new/ashtom/profiling        \nremote: \nTo github.com:entireio/cli.git\n * [new branch]        ashtom/profiling -> ashtom/profiling\nBranch 'ashtom/profiling' set up to track remote branch 'ashtom/profiling' from 'origin'.\n",
+              "exit": 0,
+              "description": "Push new branch and set upstream",
+              "truncated": false
+            },
+            "time": {
+              "start": 1773275921408,
+              "end": 1773275929825
+            }
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "fc_0b2e148ec50061310169b20b10fe708191bdbd7eeb70d47a4f"
+            }
+          },
+          "id": "prt_cdf7b3a7b001R08wdNayfNzyVd",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b230d001xJdskrWAnfUavc"
+        },
+        {
+          "type": "step-finish",
+          "reason": "tool-calls",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "cost": 0,
+          "tokens": {
+            "total": 135314,
+            "input": 200,
+            "output": 74,
+            "reasoning": 21,
+            "cache": {
+              "read": 135040,
+              "write": 0
+            }
+          },
+          "id": "REDACTED",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b230d001xJdskrWAnfUavc"
+        }
+      ]
+    },
+    {
+      "info": {
+        "role": "assistant",
+        "time": {
+          "created": 1773275930032,
+          "completed": 1773275939412
+        },
+        "parentID": "msg_cdf7ab17b001yJb26VqukInk3t",
+        "modelID": "gpt-5.3-codex",
+        "providerID": "openai",
+        "mode": "build",
+        "agent": "build",
+        "path": {
+          "cwd": "/Users/thomi/Projects/entire-cli",
+          "root": "/Users/thomi/Projects/entire-cli"
+        },
+        "cost": 0,
+        "tokens": {
+          "total": 135578,
+          "input": 280,
+          "output": 130,
+          "reasoning": 27,
+          "cache": {
+            "read": 135168,
+            "write": 0
+          }
+        },
+        "finish": "stop",
+        "id": "msg_cdf7b5db0001hPx3NgYvRRnrR9",
+        "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8"
+      },
+      "parts": [
+        {
+          "type": "step-start",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "id": "prt_cdf7b6ce4001IrwT1YCjOxfrt2",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b5db0001hPx3NgYvRRnrR9"
+        },
+        {
+          "type": "reasoning",
+          "text": "**Confirming commit and push done**",
+          "metadata": {
+            "openai": {
+              "itemId": "rs_0258bf7db2a206880169b20b2084a88191ae2b6a0fe6c1cdb1",
+              "reasoningEncryptedContent": "REDACTED"
+            }
+          },
+          "time": {
+            "start": 1773275936564,
+            "end": 1773275937638
+          },
+          "id": "prt_cdf7b7734001LfPNH2Y74Q6aM6",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b5db0001hPx3NgYvRRnrR9"
+        },
+        {
+          "type": "text",
+          "text": "Done — committed and pushed.\n\n- Commit: `2369af22`\n- Message: `feat: add profile command for turn timing`\n- Branch pushed: `ashtom/profiling`\n- Upstream set: `origin/ashtom/profiling`\n- GitHub PR link helper: `https://github.com/entireio/cli/pull/new/ashtom/profiling`\n\nNote: I left your untracked `.opencode/` directory untouched.",
+          "time": {
+            "start": 1773275939188,
+            "end": 1773275939188
+          },
+          "metadata": {
+            "openai": {
+              "itemId": "msg_0258bf7db2a206880169b20b219fac8191bcb29a1c81f62a18"
+            }
+          },
+          "id": "prt_cdf7b7b6a001fxjXf6RWnbHUL8",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b5db0001hPx3NgYvRRnrR9"
+        },
+        {
+          "type": "step-finish",
+          "reason": "stop",
+          "snapshot": "9ad85d638fec25fc9187445215077c852752b450",
+          "cost": 0,
+          "tokens": {
+            "total": 135578,
+            "input": 280,
+            "output": 130,
+            "reasoning": 27,
+            "cache": {
+              "read": 135168,
+              "write": 0
+            }
+          },
+          "id": "prt_cdf7b81790012iTzDOaf40r1XB",
+          "sessionID": "ses_320bb9572ffeg9UEjfghnZJov8",
+          "messageID": "msg_cdf7b5db0001hPx3NgYvRRnrR9"
         }
       ]
     }
