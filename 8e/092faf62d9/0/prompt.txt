@@ -1,0 +1,5 @@
+can you take a look at https://github.com/entireio/cli/actions/runs/23144706524
+
+---
+
+can you work on a fix for the opencode failures
