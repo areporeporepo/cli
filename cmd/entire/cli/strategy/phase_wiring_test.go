@@ -359,8 +359,7 @@ func TestCondenseAndMarkFullyCondensed_WithDataNoFiles(t *testing.T) {
 	metadataDir := ".entire/metadata/" + sessionID
 	metadataDirAbs := filepath.Join(dir, metadataDir)
 	require.NoError(t, os.MkdirAll(metadataDirAbs, 0o755))
-	transcript := "{\"type\":\"human\",\"message\":{\"content\":\"test prompt\"}}\n{\"type\":\"assistant\",\"message\":{\"content\":\"test response\"}}\n"
-	require.NoError(t, os.WriteFile(filepath.Join(metadataDirAbs, paths.TranscriptFileName), []byte(transcript), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(metadataDirAbs, paths.TranscriptFileName), []byte(testTranscriptPromptResponse), 0o644))
 
 	// Write a file the agent "modified" (but it will be committed by parent)
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "agent_file.txt"), []byte("agent work"), 0o644))
@@ -388,7 +387,7 @@ func TestCondenseAndMarkFullyCondensed_WithDataNoFiles(t *testing.T) {
 	state.FilesTouched = nil // Parent committed the files
 	require.NoError(t, s.saveSessionState(context.Background(), state))
 
-	require.True(t, state.StepCount > 0, "StepCount should be > 0 before eager condense")
+	require.Positive(t, state.StepCount, "StepCount should be > 0 before eager condense")
 
 	// Run CondenseAndMarkFullyCondensed
 	err = s.CondenseAndMarkFullyCondensed(context.Background(), sessionID)

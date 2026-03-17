@@ -4,6 +4,7 @@ package integration
 
 import (
 	"testing"
+	"time"
 
 	"github.com/entireio/cli/cmd/entire/cli/session"
 )
@@ -77,6 +78,8 @@ func TestCarryForward_NewSessionCommitDoesNotCondenseOldSession(t *testing.T) {
 		t.Fatalf("GetSessionState for session1 failed: %v", err)
 	}
 	state1.Phase = session.PhaseEnded
+	staleEndedAt := time.Now().Add(-2 * time.Hour) // past forceCondenseThreshold (1h)
+	state1.EndedAt = &staleEndedAt
 	if err := env.WriteSessionState(session1.ID, state1); err != nil {
 		t.Fatalf("WriteSessionState for session1 failed: %v", err)
 	}
