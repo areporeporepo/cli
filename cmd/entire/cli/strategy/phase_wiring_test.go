@@ -7,10 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/entireio/cli/cmd/entire/cli/paths"
 	"github.com/entireio/cli/cmd/entire/cli/session"
 	"github.com/entireio/cli/cmd/entire/cli/versioninfo"
 
 	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -301,7 +303,147 @@ func TestInitializeSession_EmptyModelDoesNotOverwrite(t *testing.T) {
 		"InitializeSession should not clear ModelName when model parameter is empty")
 }
 
+// TestCondenseAndMarkFullyCondensed_NoFilesNoData verifies that a session with
+// no FilesTouched and no uncondensed data is marked FullyCondensed immediately.
+func TestCondenseAndMarkFullyCondensed_NoFilesNoData(t *testing.T) {
+	dir := setupGitRepo(t)
+	t.Chdir(dir)
+
+	s := &ManualCommitStrategy{}
+	sessionID := "eager-condense-empty"
+
+	err := s.InitializeSession(context.Background(), sessionID, "Claude Code", "", "", "")
+	require.NoError(t, err)
+
+	state, err := s.loadSessionState(context.Background(), sessionID)
+	require.NoError(t, err)
+	now := time.Now()
+	state.Phase = session.PhaseEnded
+	state.EndedAt = &now
+	state.StepCount = 0
+	state.FilesTouched = nil
+	require.NoError(t, s.saveSessionState(context.Background(), state))
+
+	err = s.CondenseAndMarkFullyCondensed(context.Background(), sessionID)
+	require.NoError(t, err)
+
+	state, err = s.loadSessionState(context.Background(), sessionID)
+	require.NoError(t, err)
+	require.NotNil(t, state)
+
+	assert.True(t, state.FullyCondensed,
+		"session with no files and no data should be marked FullyCondensed")
+	assert.Equal(t, session.PhaseEnded, state.Phase)
+}
+
 // writeTestFile is a helper to create a test file with given content.
 func writeTestFile(path, content string) error {
 	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+// TestCondenseAndMarkFullyCondensed_WithDataNoFiles verifies that a session with
+// uncondensed data (StepCount > 0, shadow branch exists) but no FilesTouched
+// is condensed and marked FullyCondensed. This is the subagent case from #591:
+// the subagent's files were already committed by the parent session.
+func TestCondenseAndMarkFullyCondensed_WithDataNoFiles(t *testing.T) {
+	dir := setupGitRepo(t)
+	t.Chdir(dir)
+
+	repo, err := git.PlainOpen(dir)
+	require.NoError(t, err)
+
+	s := &ManualCommitStrategy{}
+	sessionID := "eager-condense-with-data"
+
+	// Create metadata directory with a transcript file
+	metadataDir := ".entire/metadata/" + sessionID
+	metadataDirAbs := filepath.Join(dir, metadataDir)
+	require.NoError(t, os.MkdirAll(metadataDirAbs, 0o755))
+	transcript := "{\"type\":\"human\",\"message\":{\"content\":\"test prompt\"}}\n{\"type\":\"assistant\",\"message\":{\"content\":\"test response\"}}\n"
+	require.NoError(t, os.WriteFile(filepath.Join(metadataDirAbs, paths.TranscriptFileName), []byte(transcript), 0o644))
+
+	// Write a file the agent "modified" (but it will be committed by parent)
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "agent_file.txt"), []byte("agent work"), 0o644))
+
+	// SaveStep creates the shadow branch
+	err = s.SaveStep(context.Background(), StepContext{
+		SessionID:      sessionID,
+		ModifiedFiles:  []string{},
+		NewFiles:       []string{"agent_file.txt"},
+		DeletedFiles:   []string{},
+		MetadataDir:    metadataDir,
+		MetadataDirAbs: metadataDirAbs,
+		CommitMessage:  "Checkpoint 1",
+		AuthorName:     "Test",
+		AuthorEmail:    "test@test.com",
+	})
+	require.NoError(t, err)
+
+	// Set phase to ENDED with NO files (parent already committed them)
+	state, err := s.loadSessionState(context.Background(), sessionID)
+	require.NoError(t, err)
+	now := time.Now()
+	state.Phase = session.PhaseEnded
+	state.EndedAt = &now
+	state.FilesTouched = nil // Parent committed the files
+	require.NoError(t, s.saveSessionState(context.Background(), state))
+
+	require.True(t, state.StepCount > 0, "StepCount should be > 0 before eager condense")
+
+	// Run CondenseAndMarkFullyCondensed
+	err = s.CondenseAndMarkFullyCondensed(context.Background(), sessionID)
+	require.NoError(t, err)
+
+	// Verify session state after eager condense
+	state, err = s.loadSessionState(context.Background(), sessionID)
+	require.NoError(t, err)
+	require.NotNil(t, state)
+
+	assert.True(t, state.FullyCondensed,
+		"session with no FilesTouched should be marked FullyCondensed after eager condense")
+	assert.Equal(t, session.PhaseEnded, state.Phase,
+		"Phase should stay ENDED (not IDLE like CondenseSessionByID)")
+	assert.Equal(t, 0, state.StepCount,
+		"StepCount should be reset after condensation")
+
+	// Verify checkpoints branch was created (data condensed)
+	_, err = repo.Reference(plumbing.NewBranchReferenceName(paths.MetadataBranchName), true)
+	require.NoError(t, err, "entire/checkpoints/v1 should exist after condensation")
+}
+
+// TestCondenseAndMarkFullyCondensed_WithFilesTouched_Skips verifies that a
+// session with FilesTouched is NOT eagerly condensed — PostCommit needs to
+// process it for carry-forward tracking so each user commit gets its own checkpoint.
+func TestCondenseAndMarkFullyCondensed_WithFilesTouched_Skips(t *testing.T) {
+	dir := setupGitRepo(t)
+	t.Chdir(dir)
+
+	s := &ManualCommitStrategy{}
+	sessionID := "eager-condense-has-files"
+
+	// Create a session with FilesTouched
+	err := s.InitializeSession(context.Background(), sessionID, "Claude Code", "", "", "")
+	require.NoError(t, err)
+
+	state, err := s.loadSessionState(context.Background(), sessionID)
+	require.NoError(t, err)
+	now := time.Now()
+	state.Phase = session.PhaseEnded
+	state.EndedAt = &now
+	state.FilesTouched = []string{"some_file.txt"}
+	require.NoError(t, s.saveSessionState(context.Background(), state))
+
+	// Run CondenseAndMarkFullyCondensed — should be a no-op
+	err = s.CondenseAndMarkFullyCondensed(context.Background(), sessionID)
+	require.NoError(t, err)
+
+	// Verify session state is unchanged
+	state, err = s.loadSessionState(context.Background(), sessionID)
+	require.NoError(t, err)
+	require.NotNil(t, state)
+
+	assert.False(t, state.FullyCondensed,
+		"session with FilesTouched should NOT be marked FullyCondensed")
+	assert.Equal(t, []string{"some_file.txt"}, state.FilesTouched,
+		"FilesTouched should be preserved")
 }
