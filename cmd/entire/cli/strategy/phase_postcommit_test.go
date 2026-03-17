@@ -1586,9 +1586,9 @@ func TestPostCommit_EndedSessionCarryForward_ForceCondensedWithoutOverlap(t *tes
 
 	endedState, err := s.loadSessionState(context.Background(), endedSessionID)
 	require.NoError(t, err)
-	now := time.Now()
+	staleEndedAt := time.Now().Add(-2 * time.Hour) // past forceCondenseThreshold
 	endedState.Phase = session.PhaseEnded
-	endedState.EndedAt = &now
+	endedState.EndedAt = &staleEndedAt
 	// Simulate carry-forward: session touched test.txt but it wasn't fully committed yet.
 	// CheckpointTranscriptStart=0 so sessionHasNewContent returns true (transcript grew).
 	endedState.FilesTouched = []string{"test.txt"}
@@ -1691,6 +1691,61 @@ func TestPostCommit_EndedSessionCarryForward_ForceCondensedWithoutOverlap(t *tes
 		"New ACTIVE session StepCount should be reset by condensation")
 	assert.Equal(t, newHead, newState.BaseCommit,
 		"New ACTIVE session BaseCommit should be updated after condensation")
+}
+
+// TestPostCommit_RecentEndedSession_NotForceCondensed verifies that an ENDED
+// session within the forceCondenseThreshold is NOT force-condensed — the user
+// may still commit those files in a separate commit.
+func TestPostCommit_RecentEndedSession_NotForceCondensed(t *testing.T) {
+	dir := setupGitRepo(t)
+	t.Chdir(dir)
+
+	repo, err := git.PlainOpen(dir)
+	require.NoError(t, err)
+
+	s := &ManualCommitStrategy{}
+
+	// Create ENDED session that ended 5 minutes ago (within threshold)
+	endedSessionID := "recent-ended-session"
+	setupSessionWithCheckpoint(t, s, repo, dir, endedSessionID)
+
+	endedState, err := s.loadSessionState(context.Background(), endedSessionID)
+	require.NoError(t, err)
+	recentEndedAt := time.Now().Add(-5 * time.Minute) // within forceCondenseThreshold
+	endedState.Phase = session.PhaseEnded
+	endedState.EndedAt = &recentEndedAt
+	endedState.FilesTouched = []string{"test.txt"}
+	endedState.CheckpointTranscriptStart = 0
+	require.NoError(t, s.saveSessionState(context.Background(), endedState))
+
+	originalStepCount := endedState.StepCount
+
+	// Create an unrelated commit with checkpoint trailer
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "unrelated.txt"), []byte("unrelated"), 0o644))
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+	_, err = wt.Add("unrelated.txt")
+	require.NoError(t, err)
+	cpID := "rc01rc02rc03"
+	commitMsg := "unrelated commit\n\n" + trailers.CheckpointTrailerKey + ": " + cpID + "\n"
+	_, err = wt.Commit(commitMsg, &git.CommitOptions{
+		Author: &object.Signature{Name: "Test", Email: "test@test.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+
+	// Run PostCommit
+	err = s.PostCommit(context.Background())
+	require.NoError(t, err)
+
+	// Verify: recent ENDED session was NOT force-condensed
+	endedState, err = s.loadSessionState(context.Background(), endedSessionID)
+	require.NoError(t, err)
+	assert.Equal(t, originalStepCount, endedState.StepCount,
+		"StepCount should be unchanged — session is too recent for force-condensation")
+	assert.False(t, endedState.FullyCondensed,
+		"Recent ENDED session should NOT be marked FullyCondensed")
+	assert.Equal(t, []string{"test.txt"}, endedState.FilesTouched,
+		"FilesTouched should be preserved for future commits")
 }
 
 // TestPostCommit_StaleActiveSession_NotCondensed verifies that a stale ACTIVE

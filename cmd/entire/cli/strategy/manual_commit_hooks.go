@@ -682,17 +682,20 @@ func (h *postCommitActionHandler) HandleCondenseIfFilesTouched(state *session.St
 			repoDir:        h.repoDir,
 			headCommitHash: h.newHead,
 		})
-	case len(state.FilesTouched) > 0 && h.hasNew:
-		// Force-condense: ENDED session with files but no commit overlap.
-		// Without this, the session persists indefinitely — re-processed on
-		// every future commit at ~73-103ms each, causing O(N) accumulation.
-		// Pass nil committedFiles to preserve all FilesTouched (no filtering).
+	case h.hasNew && isStaleEnded(state):
+		// Force-condense: ENDED session past staleness threshold with files
+		// but no commit overlap. Without this, the session persists forever —
+		// re-processed on every future commit at ~60-100ms each (issue #591).
+		// Safety net for cases where eager-condense-on-stop didn't fire
+		// (older CLI, crash, or session had FilesTouched at stop time).
 		h.condensed = h.s.condenseAndUpdateState(h.ctx, h.repo, h.checkpointID, state, h.head, h.shadowBranchName, h.shadowBranchesToDelete, nil, condenseOpts{
-			shadowRef: h.shadowRef,
-			headTree:  h.headTree,
+			shadowRef:      h.shadowRef,
+			headTree:       h.headTree,
+			repoDir:        h.repoDir,
+			headCommitHash: h.newHead,
 		})
 		h.forceCondensed = true
-		logging.Info(logCtx, "post-commit: force-condensed ended session (no commit overlap)",
+		logging.Info(logCtx, "post-commit: force-condensed stale ended session (no commit overlap)",
 			slog.String("session_id", state.SessionID),
 			slog.Int("files_touched", len(state.FilesTouched)),
 		)
@@ -744,6 +747,22 @@ func (h *postCommitActionHandler) shouldCondenseWithOverlapCheck(isActive bool, 
 		parentTree:    h.parentTree,
 		hasParentTree: true,
 	})
+}
+
+// forceCondenseThreshold is the minimum age of EndedAt before an ENDED session
+// with non-overlapping files is force-condensed. 1 hour allows time for the user
+// to commit the session's files in a separate commit after ending the session.
+// After this threshold, the session is considered permanently stale.
+// Uses the same staleness threshold as 'entire doctor' for consistency.
+const forceCondenseThreshold = 1 * time.Hour
+
+// isStaleEnded returns true if the session is ENDED and has been ended for
+// longer than forceCondenseThreshold. Used to gate force-condensation of
+// sessions whose stop hook didn't eagerly condense.
+func isStaleEnded(state *session.State) bool {
+	return state.Phase == session.PhaseEnded &&
+		state.EndedAt != nil &&
+		time.Since(*state.EndedAt) > forceCondenseThreshold
 }
 
 // activeSessionInteractionThreshold is the maximum age of LastInteractionTime
