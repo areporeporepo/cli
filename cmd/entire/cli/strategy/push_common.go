@@ -158,8 +158,11 @@ func fetchAndMergeSessionsCommon(ctx context.Context, target, branchName string)
 		fetchedRefName = plumbing.NewRemoteReferenceName(target, branchName)
 	}
 
-	// Use git CLI for fetch (go-git's fetch can be tricky with auth)
-	fetchCmd := exec.CommandContext(ctx, "git", "fetch", target, refSpec)
+	// Use git CLI for fetch (go-git's fetch can be tricky with auth).
+	// Use --filter=blob:none for a partial fetch that downloads only commits
+	// and trees, skipping blobs. The merge only needs the tree structure to
+	// combine entries; blobs are already local or fetched on demand.
+	fetchCmd := exec.CommandContext(ctx, "git", "fetch", "--filter=blob:none", target, refSpec)
 	fetchCmd.Stdin = nil
 	if output, err := fetchCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("fetch failed: %s", output)
