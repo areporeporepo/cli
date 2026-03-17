@@ -1081,6 +1081,13 @@ func (s *ManualCommitStrategy) postCommitProcessSession(
 		state.FullyCondensed = true
 	}
 
+	// Also mark ENDED sessions that were never condensed (no files, no new content).
+	// These go through HandleDiscardIfNoFiles which is a no-op for ENDED sessions,
+	// so they'd be iterated on every future PostCommit without this.
+	if !handler.condensed && state.Phase == session.PhaseEnded && len(state.FilesTouched) == 0 && !hasNew {
+		state.FullyCondensed = true
+	}
+
 	// Save the updated state
 	_, saveSessionStateSpan := perf.Start(ctx, "save_session_state")
 	if err := s.saveSessionState(ctx, state); err != nil {

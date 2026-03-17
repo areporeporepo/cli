@@ -2325,3 +2325,59 @@ func TestPostCommit_ActiveSession_DifferentFilesThanCommit_ShouldCondense(t *tes
 	require.NoError(t, err,
 		"entire/checkpoints/v1 should exist — ACTIVE session with different files must still condense")
 }
+
+// TestPostCommit_EmptyEndedSession_MarkedFullyCondensed verifies that an ENDED
+// session with no FilesTouched and no new content (hasNew=false) is marked
+// FullyCondensed on the next PostCommit. Without this, empty ENDED sessions
+// go through HandleDiscardIfNoFiles (which is a no-op for ENDED) and are
+// iterated on every future PostCommit forever.
+func TestPostCommit_EmptyEndedSession_MarkedFullyCondensed(t *testing.T) {
+	dir := setupGitRepo(t)
+	t.Chdir(dir)
+
+	repo, err := git.PlainOpen(dir)
+	require.NoError(t, err)
+
+	s := &ManualCommitStrategy{}
+
+	// We need a real session with BaseCommit/WorktreeID to pass PostCommit's
+	// session iteration. Use setupSessionWithCheckpoint to create the plumbing,
+	// then create a separate empty ENDED session sharing the same base commit.
+	helperSessionID := "helper-session"
+	setupSessionWithCheckpoint(t, s, repo, dir, helperSessionID)
+
+	helperState, err := s.loadSessionState(context.Background(), helperSessionID)
+	require.NoError(t, err)
+
+	// Create the empty ENDED session — no files, no steps, no shadow branch content
+	emptySessionID := "empty-ended-session"
+	endedAt := time.Now().Add(-2 * time.Hour)
+	emptyState := &SessionState{
+		SessionID:    emptySessionID,
+		BaseCommit:   helperState.BaseCommit,
+		WorktreePath: helperState.WorktreePath,
+		WorktreeID:   helperState.WorktreeID,
+		StartedAt:    time.Now().Add(-3 * time.Hour),
+		Phase:        session.PhaseEnded,
+		EndedAt:      &endedAt,
+		FilesTouched: nil,
+		StepCount:    0,
+	}
+	require.NoError(t, s.saveSessionState(context.Background(), emptyState))
+
+	// Create a commit with checkpoint trailer
+	commitWithCheckpointTrailer(t, repo, dir, "e1e2e3e4e5e6")
+
+	// Run PostCommit
+	err = s.PostCommit(context.Background())
+	require.NoError(t, err)
+
+	// Verify: empty ENDED session should be marked FullyCondensed
+	state, err := s.loadSessionState(context.Background(), emptySessionID)
+	require.NoError(t, err)
+	require.NotNil(t, state)
+	assert.True(t, state.FullyCondensed,
+		"ENDED session with no files and no new content should be marked FullyCondensed")
+	assert.Equal(t, session.PhaseEnded, state.Phase,
+		"Phase should stay ENDED")
+}
