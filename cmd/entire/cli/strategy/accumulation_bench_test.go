@@ -276,8 +276,10 @@ func setupAccumulationRepo(b *testing.B, sessionCount int, profile repoProfile) 
 			b.Fatalf("load state: %v", err)
 		}
 		state.Phase = session.PhaseEnded
-		now := time.Now()
-		state.EndedAt = &now
+		// Make the synthetic ENDED session stale so PostCommit exercises the
+		// force-condense path from issue #591 on the first commit.
+		staleEndedAt := time.Now().Add(-(forceCondenseThreshold + time.Minute))
+		state.EndedAt = &staleEndedAt
 		state.FilesTouched = []string{agentFile}
 		state.CheckpointTranscriptStart = 0 // so sessionHasNewContent returns true
 		if err := s.saveSessionState(context.Background(), state); err != nil {
