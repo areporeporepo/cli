@@ -1,0 +1,21 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "c175a1a3a7c5",
+  "strategy": "manual-commit",
+  "branch": "cli_search",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "cmd/entire/cli/auth/resolve.go",
+    "cmd/entire/cli/auth_cmd.go",
+    "cmd/entire/cli/search_cmd.go"
+  ],
+  "sessions": [
+    {
+      "metadata": "/c1/75a1a3a7c5/0/metadata.json",
+      "transcript": "/c1/75a1a3a7c5/0/full.jsonl",
+      "context": "",
+      "content_hash": "/c1/75a1a3a7c5/0/content_hash.txt",
+      "prompt": ""
+    }
+  ]
+}
