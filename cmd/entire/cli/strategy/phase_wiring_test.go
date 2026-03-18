@@ -303,37 +303,58 @@ func TestInitializeSession_EmptyModelDoesNotOverwrite(t *testing.T) {
 		"InitializeSession should not clear ModelName when model parameter is empty")
 }
 
-// TestCondenseAndMarkFullyCondensed_NoFilesNoData verifies that a session with
-// no FilesTouched and no uncondensed data is marked FullyCondensed immediately.
-func TestCondenseAndMarkFullyCondensed_NoFilesNoData(t *testing.T) {
-	dir := setupGitRepo(t)
-	t.Chdir(dir)
+// TestCondenseAndMarkFullyCondensed_Guards verifies the two early-exit conditions
+// in CondenseAndMarkFullyCondensed: sessions with no data are marked FullyCondensed
+// immediately, and sessions with FilesTouched are left untouched for PostCommit.
+func TestCondenseAndMarkFullyCondensed_Guards(t *testing.T) {
+	t.Run("no data marks FullyCondensed immediately", func(t *testing.T) {
+		dir := setupGitRepo(t)
+		t.Chdir(dir)
 
-	s := &ManualCommitStrategy{}
-	sessionID := "eager-condense-empty"
+		s := &ManualCommitStrategy{}
+		require.NoError(t, s.InitializeSession(context.Background(), "test-session", "Claude Code", "", "", ""))
 
-	err := s.InitializeSession(context.Background(), sessionID, "Claude Code", "", "", "")
-	require.NoError(t, err)
+		state, err := s.loadSessionState(context.Background(), "test-session")
+		require.NoError(t, err)
+		now := time.Now()
+		state.Phase = session.PhaseEnded
+		state.EndedAt = &now
+		state.StepCount = 0
+		state.FilesTouched = nil
+		require.NoError(t, s.saveSessionState(context.Background(), state))
 
-	state, err := s.loadSessionState(context.Background(), sessionID)
-	require.NoError(t, err)
-	now := time.Now()
-	state.Phase = session.PhaseEnded
-	state.EndedAt = &now
-	state.StepCount = 0
-	state.FilesTouched = nil
-	require.NoError(t, s.saveSessionState(context.Background(), state))
+		require.NoError(t, s.CondenseAndMarkFullyCondensed(context.Background(), "test-session"))
 
-	err = s.CondenseAndMarkFullyCondensed(context.Background(), sessionID)
-	require.NoError(t, err)
+		state, err = s.loadSessionState(context.Background(), "test-session")
+		require.NoError(t, err)
+		require.NotNil(t, state)
+		assert.True(t, state.FullyCondensed)
+		assert.Equal(t, session.PhaseEnded, state.Phase)
+	})
 
-	state, err = s.loadSessionState(context.Background(), sessionID)
-	require.NoError(t, err)
-	require.NotNil(t, state)
+	t.Run("with FilesTouched is a no-op", func(t *testing.T) {
+		dir := setupGitRepo(t)
+		t.Chdir(dir)
 
-	assert.True(t, state.FullyCondensed,
-		"session with no files and no data should be marked FullyCondensed")
-	assert.Equal(t, session.PhaseEnded, state.Phase)
+		s := &ManualCommitStrategy{}
+		require.NoError(t, s.InitializeSession(context.Background(), "test-session", "Claude Code", "", "", ""))
+
+		state, err := s.loadSessionState(context.Background(), "test-session")
+		require.NoError(t, err)
+		now := time.Now()
+		state.Phase = session.PhaseEnded
+		state.EndedAt = &now
+		state.FilesTouched = []string{"some_file.txt"}
+		require.NoError(t, s.saveSessionState(context.Background(), state))
+
+		require.NoError(t, s.CondenseAndMarkFullyCondensed(context.Background(), "test-session"))
+
+		state, err = s.loadSessionState(context.Background(), "test-session")
+		require.NoError(t, err)
+		require.NotNil(t, state)
+		assert.False(t, state.FullyCondensed)
+		assert.Equal(t, []string{"some_file.txt"}, state.FilesTouched)
+	})
 }
 
 // writeTestFile is a helper to create a test file with given content.
@@ -408,41 +429,4 @@ func TestCondenseAndMarkFullyCondensed_WithDataNoFiles(t *testing.T) {
 	// Verify checkpoints branch was created (data condensed)
 	_, err = repo.Reference(plumbing.NewBranchReferenceName(paths.MetadataBranchName), true)
 	require.NoError(t, err, "entire/checkpoints/v1 should exist after condensation")
-}
-
-// TestCondenseAndMarkFullyCondensed_WithFilesTouched_Skips verifies that a
-// session with FilesTouched is NOT eagerly condensed — PostCommit needs to
-// process it for carry-forward tracking so each user commit gets its own checkpoint.
-func TestCondenseAndMarkFullyCondensed_WithFilesTouched_Skips(t *testing.T) {
-	dir := setupGitRepo(t)
-	t.Chdir(dir)
-
-	s := &ManualCommitStrategy{}
-	sessionID := "eager-condense-has-files"
-
-	// Create a session with FilesTouched
-	err := s.InitializeSession(context.Background(), sessionID, "Claude Code", "", "", "")
-	require.NoError(t, err)
-
-	state, err := s.loadSessionState(context.Background(), sessionID)
-	require.NoError(t, err)
-	now := time.Now()
-	state.Phase = session.PhaseEnded
-	state.EndedAt = &now
-	state.FilesTouched = []string{"some_file.txt"}
-	require.NoError(t, s.saveSessionState(context.Background(), state))
-
-	// Run CondenseAndMarkFullyCondensed — should be a no-op
-	err = s.CondenseAndMarkFullyCondensed(context.Background(), sessionID)
-	require.NoError(t, err)
-
-	// Verify session state is unchanged
-	state, err = s.loadSessionState(context.Background(), sessionID)
-	require.NoError(t, err)
-	require.NotNil(t, state)
-
-	assert.False(t, state.FullyCondensed,
-		"session with FilesTouched should NOT be marked FullyCondensed")
-	assert.Equal(t, []string{"some_file.txt"}, state.FilesTouched,
-		"FilesTouched should be preserved")
 }

@@ -1095,17 +1095,11 @@ func (s *ManualCommitStrategy) postCommitProcessSession(
 	}
 	carryForwardSpan.End()
 
-	// Mark ENDED sessions as fully condensed when no carry-forward remains.
-	// PostCommit will skip these sessions entirely on future commits.
-	// They persist only for LastCheckpointID (amend trailer restoration).
-	if handler.condensed && state.Phase == session.PhaseEnded && len(state.FilesTouched) == 0 {
-		state.FullyCondensed = true
-	}
-
-	// Also mark ENDED sessions that were never condensed (no files, no new content).
-	// These go through HandleDiscardIfNoFiles which is a no-op for ENDED sessions,
-	// so they'd be iterated on every future PostCommit without this.
-	if !handler.condensed && state.Phase == session.PhaseEnded && len(state.FilesTouched) == 0 && !hasNew {
+	// Mark ENDED sessions as fully condensed when there's nothing left to do.
+	// Either we just condensed (no carry-forward remains) or there was never any
+	// new content. PostCommit will skip these on future commits; they persist only
+	// for LastCheckpointID (amend trailer restoration).
+	if state.Phase == session.PhaseEnded && len(state.FilesTouched) == 0 && (handler.condensed || !hasNew) {
 		state.FullyCondensed = true
 	}
 
