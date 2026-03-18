@@ -1,0 +1,36 @@
+{
+  "cli_version": "dev",
+  "checkpoint_id": "e02234e1ec99",
+  "session_id": "edc6d0a9-08d6-4a59-931c-44d90c98b108",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-18T22:15:59.632237Z",
+  "branch": "soph/use-transcript-size",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "cmd/entire/cli/session/state.go",
+    "cmd/entire/cli/strategy/manual_commit_condensation.go",
+    "cmd/entire/cli/strategy/manual_commit_hooks.go",
+    "cmd/entire/cli/strategy/manual_commit_types.go"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "9ce27e00407b",
+  "token_usage": {
+    "input_tokens": 2627,
+    "cache_creation_tokens": 178196,
+    "cache_read_tokens": 5053225,
+    "output_tokens": 13488,
+    "api_call_count": 63
+  },
+  "session_metrics": {
+    "turn_count": 2
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-18T22:15:59.340701Z",
+    "agent_lines": 36,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 36,
+    "agent_percentage": 100
+  }
+}
