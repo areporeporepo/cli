@@ -16,3 +16,11 @@ Change the marker file naming to place in the entire/trails/v1 branch from "MIGR
 ---
 
 please explain the changes to @cmd/entire/cli/strategy/checkpoint_remote.go since I only wanted changes to areas relevant to Trails and if possible undo them or minimize them
+
+---
+
+commit and push these changes and draft a PR for it
+
+---
+
+commit and push these changes and draft a PR for it
