@@ -1,45 +1,5 @@
-A user reported: 
-
-Why does post-commit scan all 20 sessions when it only needs the current one? If the hook only loaded the active session's file (~17 MB) instead of scanning the full 190 MB directory, typical latency would drop from 148s to roughly 8-12s (single session cost from our data).
-
-Can you familiarize with that a bit, I have some follow up questions
+/simplify
 
 ---
 
-so why are we read the 20 .json files?
-
----
-
-and condension reads all jsonl files?
-
----
-
-but you see "transcript reads" - why are the transcripts read those are the large files, right?
-
----
-
-why do we count the lines?
-
----
-
-but one more ask: So let's say he had 20 sessions that were IDLE/ENDED but not condensed, now we read all of them to figure out which one are relevant, and then we also read the transcript length for all of them?
-
----
-
-we put the session logs in the shadow branch?
-
----
-
-can we do a simple fix by just comparing the file / blob size?
-
----
-
-yeah that's what I mean, I want to switch from comparing lines to comparing the size.
-
----
-
-no, I want a new field we only use for this check.
-
----
-
-yes
+do we have the test for the migration problem? when CheckpointTranscriptSize is not there yet?
