@@ -5,3 +5,7 @@ cmd/entire/cli/clean.go
 cmd/entire/cli/reset.go
 1. Like clean, reset initializes logging before verifying it's in a git repository. Because logging.Init falls back to repoRoot = ".", entire reset run outside a repo can create .entire/logs in the current directory before returning "not a git repository". Please reorder to check paths.WorktreeRoot first, then initialize logging once the repo context is confirmed.
 2. For backward compatibility, entire reset --session <id> currently delegates to runCleanSession, which uses "clean" wording in prompts/output (e.g., "Clean session…" / "has been cleaned"). Even though reset is deprecated, this can confuse users following older docs/scripts. Consider parameterizing runCleanSession with the action verb (reset/clean) or keeping a small reset-specific wrapper for messaging.
+
+---
+
+commit this
