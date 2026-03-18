@@ -694,11 +694,13 @@ func (h *postCommitActionHandler) HandleCondenseIfFilesTouched(state *session.St
 			repoDir:        h.repoDir,
 			headCommitHash: h.newHead,
 		})
-		h.forceCondensed = true
-		logging.Info(logCtx, "post-commit: force-condensed stale ended session (no commit overlap)",
-			slog.String("session_id", state.SessionID),
-			slog.Int("files_touched", len(state.FilesTouched)),
-		)
+		if h.condensed {
+			h.forceCondensed = true
+			logging.Info(logCtx, "post-commit: force-condensed stale ended session (no commit overlap)",
+				slog.String("session_id", state.SessionID),
+				slog.Int("files_touched", len(state.FilesTouched)),
+			)
+		}
 	default:
 		h.s.updateBaseCommitIfChanged(h.ctx, state, h.newHead)
 	}

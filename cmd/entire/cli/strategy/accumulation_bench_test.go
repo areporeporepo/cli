@@ -287,7 +287,9 @@ func setupAccumulationRepo(tb testing.TB, sessionCount int, profile repoProfile)
 		}
 
 		// Clean up the agent file from worktree (user discarded changes)
-		os.Remove(agentFileAbs)
+		if err := os.Remove(agentFileAbs); err != nil && !os.IsNotExist(err) {
+			tb.Fatalf("remove agent file %s: %v", agentFileAbs, err)
+		}
 	}
 
 	// Create the final commit that PostCommit will process.
