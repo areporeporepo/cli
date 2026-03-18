@@ -13,3 +13,7 @@ commit this
 ---
 
 Replace os.Remove(path) in cmd/entire/cli/clean.go with the os.Root primitive, so that it ensures all deleted files are within .entire/tmp/.
+
+---
+
+commit this
