@@ -1,1 +1,17 @@
 can you https://github.com/entireio/cli/pull/716 check and let me know: don't we have some way of telling that there is no base commit already?
+
+---
+
+sorry, I meant https://github.com/entireio/cli/pull/727
+
+---
+
+The issue is also a bit: The user might do a session, we don't capture anything and then he is wondering in the end "why did nothing work"
+
+---
+
+we already have a welcome message, so we could post it there instead of saying entire is enabled?
+
+---
+
+ok, let's do this change and I propose it as an alternate PR
