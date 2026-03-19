@@ -179,3 +179,7 @@ OS/Arch: darwin/arm64
 
 artifacts: /Users/soph/Work/entire/devenv/cli_experiments/e2e/artifacts/2026-03-19T21-38-06
 [test:e2e] ERROR task failed
+
+---
+
+can you split this into two commits
