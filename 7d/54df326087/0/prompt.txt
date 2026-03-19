@@ -3,3 +3,7 @@ The resume logic seem to have stopped working. The last time I checked it was 10
 ---
 
 Let's go with option B
+
+---
+
+Commit
