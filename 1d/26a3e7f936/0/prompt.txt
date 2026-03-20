@@ -23,3 +23,7 @@ nice, commit these changes, push them to a remote branch named "chore/cli-login-
 ---
 
 I added a manual change to @cmd/entire/cli/login.go which ensures the proper authentication URL is printed to the user in case opening the browser with it fails - please check if this works, creates any other problems and if not push the changes and update the PR description
+
+---
+
+in @cmd/entire/cli/logout_test.go make sure to use go-keyring’s mock provider instead of the actual keychain of the OS since this might otherwise fail in test, i.e. on CI
