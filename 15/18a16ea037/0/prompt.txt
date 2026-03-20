@@ -15,3 +15,7 @@ looking at https://github.com/entireio/cli/pull/728 as the culprit of these chan
 ---
 
 nice! finally, if the user hits `ctrl-c` or any other sequence to terminate the program while we're waiting for their input (hit enter to open the browser), we should honor that as well and exit out of the program
+
+---
+
+nice, commit these changes, push them to a remote branch named "chore/cli-login-fixes" and open a draft pr
