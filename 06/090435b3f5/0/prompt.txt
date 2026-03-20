@@ -140,3 +140,7 @@ I think the spec is good for now. I'd like to start working on the project now. 
 ---
 
 /requesting-code-review Review the changes in this branch against main.
+
+---
+
+Can you commit the .gitignore change and the strategy option in two commits?
