@@ -632,8 +632,7 @@ type postCommitActionHandler struct {
 	shadowTree *object.Tree        // Per-session shadow commit tree (nil if branch doesn't exist)
 
 	// Output: set by handler methods, read by caller after TransitionAndLog.
-	condensed      bool
-	forceCondensed bool // true when ENDED session was condensed without file overlap
+	condensed bool
 }
 
 func (h *postCommitActionHandler) HandleCondense(state *session.State) error {
@@ -674,34 +673,14 @@ func (h *postCommitActionHandler) HandleCondenseIfFilesTouched(state *session.St
 		slog.String("shadow_branch", h.shadowBranchName),
 	)
 
-	switch {
-	case shouldCondense:
+	if shouldCondense {
 		h.condensed = h.s.condenseAndUpdateState(h.ctx, h.repo, h.checkpointID, state, h.head, h.shadowBranchName, h.shadowBranchesToDelete, h.committedFileSet, condenseOpts{
 			shadowRef:      h.shadowRef,
 			headTree:       h.headTree,
 			repoDir:        h.repoDir,
 			headCommitHash: h.newHead,
 		})
-	case h.hasNew && isStaleEnded(state):
-		// Force-condense: ENDED session past staleness threshold with files
-		// but no commit overlap. Without this, the session persists forever —
-		// re-processed on every future commit at ~60-100ms each (issue #591).
-		// Safety net for cases where eager-condense-on-stop didn't fire
-		// (older CLI, crash, or session had FilesTouched at stop time).
-		h.condensed = h.s.condenseAndUpdateState(h.ctx, h.repo, h.checkpointID, state, h.head, h.shadowBranchName, h.shadowBranchesToDelete, nil, condenseOpts{
-			shadowRef:      h.shadowRef,
-			headTree:       h.headTree,
-			repoDir:        h.repoDir,
-			headCommitHash: h.newHead,
-		})
-		if h.condensed {
-			h.forceCondensed = true
-			logging.Info(logCtx, "post-commit: force-condensed stale ended session (no commit overlap)",
-				slog.String("session_id", state.SessionID),
-				slog.Int("files_touched", len(state.FilesTouched)),
-			)
-		}
-	default:
+	} else {
 		h.s.updateBaseCommitIfChanged(h.ctx, state, h.newHead)
 	}
 	return nil
@@ -749,22 +728,6 @@ func (h *postCommitActionHandler) shouldCondenseWithOverlapCheck(isActive bool, 
 		parentTree:    h.parentTree,
 		hasParentTree: true,
 	})
-}
-
-// forceCondenseThreshold is the minimum age of EndedAt before an ENDED session
-// with non-overlapping files is force-condensed. 1 hour allows time for the user
-// to commit the session's files in a separate commit after ending the session.
-// After this threshold, the session is considered permanently stale.
-// Uses the same staleness threshold as 'entire doctor' for consistency.
-const forceCondenseThreshold = 1 * time.Hour
-
-// isStaleEnded returns true if the session is ENDED and has been ended for
-// longer than forceCondenseThreshold. Used to gate force-condensation of
-// sessions whose stop hook didn't eagerly condense.
-func isStaleEnded(state *session.State) bool {
-	return state.Phase == session.PhaseEnded &&
-		state.EndedAt != nil &&
-		time.Since(*state.EndedAt) > forceCondenseThreshold
 }
 
 // activeSessionInteractionThreshold is the maximum age of LastInteractionTime
@@ -1066,28 +1029,21 @@ func (s *ManualCommitStrategy) postCommitProcessSession(
 	// partial changes, the file still has remaining agent changes to carry forward.
 	_, carryForwardSpan := perf.Start(ctx, "carry_forward_files")
 	if handler.condensed {
-		if handler.forceCondensed {
-			state.FilesTouched = nil
-			logging.Debug(logCtx, "post-commit: skip carry-forward (force-condensed ended session)",
-				slog.String("session_id", state.SessionID),
-			)
-		} else {
-			remainingFiles := filesWithRemainingAgentChanges(ctx, repo, shadowBranchName, commit, filesTouchedBefore, committedFileSet, overlapOpts{
-				headTree:   headTree,
-				shadowTree: shadowTree,
-			})
-			state.FilesTouched = remainingFiles
-			logging.Debug(logCtx, "post-commit: carry-forward decision (content-aware)",
-				slog.String("session_id", state.SessionID),
-				slog.Int("files_touched_before", len(filesTouchedBefore)),
-				slog.Int("committed_files", len(committedFileSet)),
-				slog.Int("remaining_files", len(remainingFiles)),
-				slog.Any("remaining", remainingFiles),
-				slog.Any("committed_files", committedFileSet),
-			)
-			if len(remainingFiles) > 0 {
-				s.carryForwardToNewShadowBranch(ctx, repo, state, remainingFiles)
-			}
+		remainingFiles := filesWithRemainingAgentChanges(ctx, repo, shadowBranchName, commit, filesTouchedBefore, committedFileSet, overlapOpts{
+			headTree:   headTree,
+			shadowTree: shadowTree,
+		})
+		state.FilesTouched = remainingFiles
+		logging.Debug(logCtx, "post-commit: carry-forward decision (content-aware)",
+			slog.String("session_id", state.SessionID),
+			slog.Int("files_touched_before", len(filesTouchedBefore)),
+			slog.Int("committed_files", len(committedFileSet)),
+			slog.Int("remaining_files", len(remainingFiles)),
+			slog.Any("remaining", remainingFiles),
+			slog.Any("committed_files", committedFileSet),
+		)
+		if len(remainingFiles) > 0 {
+			s.carryForwardToNewShadowBranch(ctx, repo, state, remainingFiles)
 		}
 
 		// Clear filesystem prompt.txt only when ALL files are committed.

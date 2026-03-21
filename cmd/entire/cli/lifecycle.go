@@ -632,7 +632,7 @@ func handleLifecycleSessionEnd(ctx context.Context, ag agent.Agent, event *agent
 	// Eagerly condense session data so PostCommit doesn't have to process it.
 	// This prevents zombie ENDED sessions from accumulating and causing O(N)
 	// overhead on every future commit (GitHub issue #591).
-	// Fail-open: if this fails, PostCommit's force-condense safety net catches it.
+	// Fail-open: if this fails, PostCommit will still process it on the next commit.
 	strat := GetStrategy(ctx)
 	if err := strat.CondenseAndMarkFullyCondensed(ctx, event.SessionID); err != nil {
 		logging.Warn(logCtx, "eager condense on session stop failed",

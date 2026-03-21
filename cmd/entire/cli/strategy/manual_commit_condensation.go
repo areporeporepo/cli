@@ -794,7 +794,7 @@ func clearFilesystemPrompt(ctx context.Context, sessionID string) {
 	_ = os.Remove(promptPath)
 }
 
-// CondenseSessionByID force-condenses a session by its ID and cleans up.
+// CondenseSessionByID condenses a session by its ID and cleans up.
 // This is used by "entire doctor" to salvage stuck sessions.
 func (s *ManualCommitStrategy) CondenseSessionByID(ctx context.Context, sessionID string) error {
 	logCtx := logging.WithComponent(ctx, "condense-by-id")
@@ -887,7 +887,7 @@ func (s *ManualCommitStrategy) CondenseSessionByID(ctx context.Context, sessionI
 // we inline the condensation logic with ENDED-appropriate behavior.
 //
 // Fail-open: if condensation fails, the session is left in its current state
-// and PostCommit's force-condense safety net will catch it later.
+// and PostCommit will still process it on the next commit.
 func (s *ManualCommitStrategy) CondenseAndMarkFullyCondensed(ctx context.Context, sessionID string) error {
 	logCtx := logging.WithComponent(ctx, "checkpoint")
 

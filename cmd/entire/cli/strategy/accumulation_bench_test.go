@@ -19,11 +19,12 @@ import (
 
 // TestPostCommit_Issue591_SubagentScaleRegression is a regression test for GitHub
 // issue #591: accumulated stale ENDED sessions caused O(N) overhead on every commit
-// (~73-103ms per session, indefinitely). After the fix, they are force-condensed on
-// the first PostCommit and skipped via FullyCondensed on all subsequent commits.
+// (~73-103ms per session, indefinitely). After the fix, sessions with FilesTouched
+// are condensed on the first overlapping PostCommit and then marked FullyCondensed,
+// so all subsequent commits skip them entirely.
 //
 // Behavioral coverage (FullyCondensed/StepCount/FilesTouched assertions) lives in
-// TestPostCommit_EndedSessionCarryForward_ForceCondensedWithoutOverlap. This test
+// TestPostCommit_EndedSessionCarryForward_NotCondensedIntoUnrelatedCommit. This test
 // focuses on the performance contract: the second PostCommit must be significantly
 // faster than the first once sessions are marked FullyCondensed.
 func TestPostCommit_Issue591_SubagentScaleRegression(t *testing.T) {
@@ -38,42 +39,44 @@ func TestPostCommit_Issue591_SubagentScaleRegression(t *testing.T) {
 
 	s := &ManualCommitStrategy{}
 
-	// Create sessions with shadow branches, then mark them stale ENDED.
-	// Each session's FilesTouched = ["test.txt"], which won't overlap with the
-	// unrelated.txt commit below, triggering the force-condense path.
+	// Create sessions with shadow branches, then mark them ENDED with FilesTouched.
+	// FilesTouched prevents eager-condense-on-stop (CondenseAndMarkFullyCondensed
+	// skips sessions with FilesTouched), so these sessions remain for PostCommit.
 	for i := range sessionCount {
 		sessionID := fmt.Sprintf("ended-session-%d", i)
 		setupSessionWithCheckpoint(t, s, repo, dir, sessionID)
 		state, err := s.loadSessionState(context.Background(), sessionID)
 		require.NoError(t, err)
-		staleAt := time.Now().Add(-(forceCondenseThreshold + time.Minute))
+		endedAt := time.Now().Add(-2 * time.Hour)
 		state.Phase = session.PhaseEnded
-		state.EndedAt = &staleAt
+		state.EndedAt = &endedAt
+		// FilesTouched = ["test.txt"] — triggers overlap path when test.txt is committed.
+		state.FilesTouched = []string{"test.txt"}
 		require.NoError(t, s.saveSessionState(context.Background(), state))
 	}
 
-	// Commit an unrelated file — no overlap with any session's FilesTouched.
+	// Commit test.txt — overlaps with each session's FilesTouched.
+	// First PostCommit condenses all N sessions and marks them FullyCondensed.
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "unrelated.txt"), []byte("user work"), 0o644))
-	_, err = wt.Add("unrelated.txt")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "test.txt"), []byte("session work"), 0o644))
+	_, err = wt.Add("test.txt")
 	require.NoError(t, err)
-	_, err = wt.Commit("unrelated\n\nEntire-Checkpoint: a1b2c3d4e5f6\n", &git.CommitOptions{
+	_, err = wt.Commit("commit session work\n\nEntire-Checkpoint: a1b2c3d4e5f6\n", &git.CommitOptions{
 		Author: &object.Signature{Name: "User", Email: "user@test.com", When: time.Now()},
 	})
 	require.NoError(t, err)
 	paths.ClearWorktreeRootCache()
 
-	// First PostCommit: force-condenses all stale ENDED sessions.
 	firstStart := time.Now()
 	require.NoError(t, s.PostCommit(context.Background()))
 	firstElapsed := time.Since(firstStart)
 
-	// Create second commit — all sessions are now FullyCondensed and should be skipped.
-	require.NoError(t, os.WriteFile(filepath.Join(dir, "second.txt"), []byte("second"), 0o644))
-	_, err = wt.Add("second.txt")
+	// Commit an unrelated file — all sessions are now FullyCondensed and skipped.
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "unrelated.txt"), []byte("unrelated"), 0o644))
+	_, err = wt.Add("unrelated.txt")
 	require.NoError(t, err)
-	_, err = wt.Commit("second\n\nEntire-Checkpoint: b1b2b3b4b5b6\n", &git.CommitOptions{
+	_, err = wt.Commit("unrelated work\n\nEntire-Checkpoint: b1b2b3b4b5b6\n", &git.CommitOptions{
 		Author: &object.Signature{Name: "User", Email: "user@test.com", When: time.Now()},
 	})
 	require.NoError(t, err)
@@ -87,6 +90,6 @@ func TestPostCommit_Issue591_SubagentScaleRegression(t *testing.T) {
 	// Second PostCommit must be significantly faster — sessions are FullyCondensed and skipped.
 	assert.Less(t, secondElapsed, firstElapsed/2,
 		"second PostCommit should be much faster once sessions are FullyCondensed (issue #591 regression)")
-	t.Logf("first PostCommit (%d stale sessions): %v, second (all skipped): %v",
+	t.Logf("first PostCommit (%d ended sessions, overlap condense): %v, second (all skipped): %v",
 		sessionCount, firstElapsed, secondElapsed)
 }
