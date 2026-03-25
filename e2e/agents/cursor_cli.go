@@ -143,37 +143,22 @@ func (a *CursorCLI) StartSession(ctx context.Context, dir string) (Session, erro
 	return s, nil
 }
 
-// startInteractiveSession creates a new tmux session running the Cursor CLI
+// startInteractiveSession creates a new PTY session running the Cursor CLI
 // in interactive mode (no -p flag) so all hooks fire.
-func (a *CursorCLI) startInteractiveSession(dir string) (*TmuxSession, error) {
-	// Resolve to absolute path so tmux can find the binary even if its
-	// shell doesn't inherit the test process's PATH (common on CI).
+func (a *CursorCLI) startInteractiveSession(dir string) (*PTYSession, error) {
 	bin, err := exec.LookPath(a.Binary())
 	if err != nil {
 		return nil, fmt.Errorf("agent binary not found: %w", err)
 	}
 
-	// Build env-wrapped command so the tmux session inherits critical env vars.
-	// tmux starts a new shell that doesn't inherit Go's os.Environ().
-	var envArgs []string
-	for _, key := range []string{"CURSOR_API_KEY", "PATH", "HOME", "TERM"} {
-		if v := os.Getenv(key); v != "" {
-			envArgs = append(envArgs, key+"="+v)
-		}
-	}
-
-	args := append([]string{"env"}, envArgs...)
-	args = append(args, bin, "--force", "--workspace", dir)
-
 	name := fmt.Sprintf("cursor-cli-test-%d", time.Now().UnixNano())
-	unset := []string{"CI"}
-	return NewTmuxSession(name, dir, unset, args[0], args[1:]...)
+	return NewPTYSession(name, dir, []string{"CI"}, nil, bin, "--force", "--workspace", dir)
 }
 
 // acceptTrustDialogIfNeeded checks whether the workspace trust dialog appears
 // and presses "a" to accept it. The dialog only shows on the first launch in
 // a workspace — subsequent sessions in the same directory skip it.
-func (a *CursorCLI) acceptTrustDialogIfNeeded(s *TmuxSession) error {
+func (a *CursorCLI) acceptTrustDialogIfNeeded(s *PTYSession) error {
 	// Race: either the trust dialog or the input prompt will appear first.
 	// Use a short timeout to check for the trust dialog without blocking
 	// too long if the workspace is already trusted.

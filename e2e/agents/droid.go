@@ -176,7 +176,7 @@ func (d *Droid) RunPrompt(ctx context.Context, dir string, prompt string, opts .
 
 func (d *Droid) StartSession(ctx context.Context, dir string) (Session, error) {
 	name := fmt.Sprintf("droid-test-%d", time.Now().UnixNano())
-	s, err := NewTmuxSession(name, dir, []string{"ENTIRE_TEST_TTY"}, d.Binary(), "--model", defaultDroidModel, "--skip-permissions-unsafe")
+	s, err := NewPTYSession(name, dir, []string{"ENTIRE_TEST_TTY"}, nil, d.Binary(), "--model", defaultDroidModel, "--skip-permissions-unsafe")
 	if err != nil {
 		return nil, err
 	}
