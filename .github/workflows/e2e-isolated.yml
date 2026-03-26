@@ -21,12 +21,6 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v3
 
-      # - name: Install system dependencies
-      #   run: sudo apt-get update && sudo apt-get install -y tmux
-
-      # - name: Build entire CLI
-      #   run: go build -o /usr/local/bin/entire ./cmd/entire
-
       - name: Install Claude Code
         run: |
           irm https://claude.ai/install.ps1 | iex
@@ -43,7 +37,6 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           E2E_ARTIFACT_DIR: ${{ github.workspace }}/e2e-artifacts
-          E2E_ENTIRE_BIN: /usr/local/bin/entire
         run: |
           mkdir -p "$E2E_ARTIFACT_DIR"
           mise run test:e2e --agent claude-code "${{ inputs.test }}"
