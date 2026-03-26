@@ -28,7 +28,9 @@ jobs:
       #   run: go build -o /usr/local/bin/entire ./cmd/entire
 
       - name: Install Claude Code
-        run: irm https://claude.ai/install.ps1 | iex
+        run: |
+          irm https://claude.ai/install.ps1 | iex
+          echo "$env:USERPROFILE\.claude\local\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Bootstrap agent
         shell: bash
