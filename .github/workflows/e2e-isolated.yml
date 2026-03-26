@@ -8,7 +8,8 @@ on:
         required: true
         default: "gemini-cli"
         type: choice
-        options: [claude-code, opencode, gemini-cli, cursor-cli, factoryai-droid]
+        options:
+          [claude-code, opencode, gemini-cli, cursor-cli, factoryai-droid]
       test:
         description: "Test name filter (regex)"
         required: true
@@ -16,7 +17,8 @@ on:
 
 jobs:
   e2e-isolated:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 20
 
     steps:
@@ -26,11 +28,11 @@ jobs:
       - name: Setup mise
         uses: jdx/mise-action@v3
 
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y tmux
+      # - name: Install system dependencies
+      #   run: sudo apt-get update && sudo apt-get install -y tmux
 
-      - name: Build entire CLI
-        run: go build -o /usr/local/bin/entire ./cmd/entire
+      # - name: Build entire CLI
+      #   run: go build -o /usr/local/bin/entire ./cmd/entire
 
       - name: Install agent CLI
         run: |
