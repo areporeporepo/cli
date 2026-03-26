@@ -120,6 +120,11 @@ func (s *ManualCommitStrategy) CondenseSession(ctx context.Context, repo *git.Re
 		hasShadowBranch = err == nil
 	}
 
+	// Re-resolve transcript path before any reads — handles agents that relocate
+	// transcripts mid-session (e.g., Cursor CLI flat → nested layout change).
+	// Errors are ignored; downstream readers handle missing transcripts gracefully.
+	resolveTranscriptPath(state) //nolint:errcheck,gosec // best-effort; downstream readers handle missing files
+
 	var sessionData *ExtractedSessionData
 	if hasShadowBranch {
 		var extractErr error
@@ -142,14 +147,11 @@ func (s *ManualCommitStrategy) CondenseSession(ctx context.Context, repo *git.Re
 	}
 
 	// Backfill session state token usage from the freshly-extracted transcript.
-	// Some agents (e.g., Copilot CLI) write aggregate token data (session.shutdown)
-	// AFTER all hooks return, so state.TokenUsage from turn-end only has fallback data.
-	// By condensation time, the transcript has the authoritative totals.
-	// Only replace when we got authoritative data (e.g., session.shutdown provides
-	// InputTokens; the fallback path only captures OutputTokens). This avoids
-	// overwriting accumulated multi-checkpoint totals with partial checkpoint data.
-	if sessionData.TokenUsage != nil && sessionData.TokenUsage.InputTokens > 0 {
-		state.TokenUsage = sessionData.TokenUsage
+	// Copilot CLI writes session.shutdown after the hooks return, so by condensation
+	// time we can recover the authoritative full-session total from the transcript
+	// while keeping checkpoint metadata scoped to CheckpointTranscriptStart.
+	if backfillUsage := sessionStateBackfillTokenUsage(ctx, ag, state.AgentType, sessionData.Transcript, sessionData.TokenUsage); backfillUsage != nil {
+		state.TokenUsage = backfillUsage
 	}
 
 	// For 1:1 checkpoint model: filter files_touched to only include files actually
@@ -241,8 +243,8 @@ func (s *ManualCommitStrategy) CondenseSession(ctx context.Context, repo *git.Re
 		}
 	}
 
-	// Write checkpoint metadata using the checkpoint store
-	if err := store.WriteCommitted(ctx, cpkg.WriteCommittedOptions{
+	// Build write options (shared by v1 and v2)
+	writeOpts := cpkg.WriteCommittedOptions{
 		CheckpointID:                checkpointID,
 		SessionID:                   state.SessionID,
 		Strategy:                    StrategyNameManualCommit,
@@ -263,9 +265,14 @@ func (s *ManualCommitStrategy) CondenseSession(ctx context.Context, repo *git.Re
 		SessionMetrics:              buildSessionMetrics(state),
 		InitialAttribution:          attribution,
 		Summary:                     summary,
-	}); err != nil {
+	}
+
+	// Write checkpoint metadata to v1 branch
+	if err := store.WriteCommitted(ctx, writeOpts); err != nil {
 		return nil, fmt.Errorf("failed to write checkpoint metadata: %w", err)
 	}
+
+	writeCommittedV2IfEnabled(ctx, repo, writeOpts)
 
 	return &CondenseResult{
 		CheckpointID:         checkpointID,
@@ -290,6 +297,40 @@ func buildSessionMetrics(state *SessionState) *cpkg.SessionMetrics {
 		ContextTokens:     state.ContextTokens,
 		ContextWindowSize: state.ContextWindowSize,
 	}
+}
+
+func hasTokenUsageData(usage *agent.TokenUsage) bool {
+	if usage == nil {
+		return false
+	}
+
+	if usage.InputTokens > 0 || usage.CacheCreationTokens > 0 || usage.CacheReadTokens > 0 || usage.OutputTokens > 0 || usage.APICallCount > 0 {
+		return true
+	}
+
+	return hasTokenUsageData(usage.SubagentTokens)
+}
+
+// sessionStateBackfillTokenUsage returns the best session-level token usage to
+// persist in session state after condensation.
+func sessionStateBackfillTokenUsage(ctx context.Context, ag agent.Agent, agentType types.AgentType, transcript []byte, checkpointUsage *agent.TokenUsage) *agent.TokenUsage {
+	if agentType == agent.AgentTypeCopilotCLI && len(transcript) > 0 {
+		fullSessionUsage := agent.CalculateTokenUsage(ctx, ag, transcript, 0, "")
+		if hasTokenUsageData(fullSessionUsage) {
+			return fullSessionUsage
+		}
+		logging.Debug(ctx, "copilot-cli: full-session token read produced no data, falling back to checkpoint usage")
+	}
+
+	if agentType == agent.AgentTypeCopilotCLI && hasTokenUsageData(checkpointUsage) {
+		return checkpointUsage
+	}
+
+	if checkpointUsage != nil && checkpointUsage.InputTokens > 0 {
+		return checkpointUsage
+	}
+
+	return nil
 }
 
 // attributionOpts provides pre-resolved git objects to avoid redundant reads.
@@ -513,12 +554,13 @@ func (s *ManualCommitStrategy) extractSessionDataFromLiveTranscript(ctx context.
 
 	ag, _ := agent.GetByAgentType(state.AgentType) //nolint:errcheck // ag may be nil for unknown agent types; callers use type assertions so nil is safe
 
-	// Read the live transcript
-	if state.TranscriptPath == "" {
-		return nil, errors.New("no transcript path in session state")
+	// Resolve the transcript path (handles agents that relocate mid-session).
+	transcriptPath, resolveErr := resolveTranscriptPath(state)
+	if resolveErr != nil {
+		return nil, resolveErr
 	}
 
-	liveData, err := os.ReadFile(state.TranscriptPath)
+	liveData, err := os.ReadFile(transcriptPath) //nolint:gosec // path validated by resolveTranscriptPath
 	if err != nil {
 		return nil, fmt.Errorf("failed to read live transcript: %w", err)
 	}
@@ -817,6 +859,7 @@ func (s *ManualCommitStrategy) CondenseSessionByID(ctx context.Context, sessionI
 	// Update session state: reset step count and transition to idle
 	state.StepCount = 0
 	state.CheckpointTranscriptStart = result.TotalTranscriptLines
+	state.CheckpointTranscriptSize = int64(len(result.Transcript))
 	state.Phase = session.PhaseIdle
 	state.LastCheckpointID = checkpointID
 	state.AttributionBaseCommit = state.BaseCommit
@@ -868,4 +911,21 @@ func (s *ManualCommitStrategy) cleanupShadowBranchIfUnused(ctx context.Context, 
 		return fmt.Errorf("failed to remove shadow branch: %w", err)
 	}
 	return nil
+}
+
+// writeCommittedV2IfEnabled writes checkpoint data to v2 refs when checkpoints_v2
+// is enabled in settings. Failures are logged as warnings — v2 writes are
+// best-effort during the dual-write period and must not block the v1 path.
+func writeCommittedV2IfEnabled(ctx context.Context, repo *git.Repository, opts cpkg.WriteCommittedOptions) {
+	if !settings.IsCheckpointsV2Enabled(ctx) {
+		return
+	}
+
+	v2Store := cpkg.NewV2GitStore(repo)
+	if err := v2Store.WriteCommitted(ctx, opts); err != nil {
+		logging.Warn(ctx, "v2 dual-write failed",
+			slog.String("checkpoint_id", opts.CheckpointID.String()),
+			slog.String("error", err.Error()),
+		)
+	}
 }

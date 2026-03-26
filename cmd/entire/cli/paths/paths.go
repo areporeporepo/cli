@@ -34,6 +34,16 @@ const (
 // MetadataBranchName is the orphan branch used by manual-commit strategy to store metadata
 const MetadataBranchName = "entire/checkpoints/v1"
 
+// V2 ref names use custom refs under refs/entire/ (not refs/heads/).
+// These are invisible in GitHub's branch UI and not fetched by default.
+const (
+	// V2MainRefName stores permanent metadata + compact transcripts.
+	V2MainRefName = "refs/entire/checkpoints/v2/main"
+
+	// V2FullCurrentRefName stores the active generation of raw transcripts.
+	V2FullCurrentRefName = "refs/entire/checkpoints/v2/full/current"
+)
+
 // TrailsBranchName is the orphan branch used to store trail metadata.
 // Trails are branch-centric work tracking abstractions that link to checkpoints by branch name.
 const TrailsBranchName = "entire/trails/v1"
@@ -121,7 +131,19 @@ func AbsPath(ctx context.Context, relPath string) (string, error) {
 // IsInfrastructurePath returns true if the path is part of CLI infrastructure
 // (i.e., inside the .entire directory)
 func IsInfrastructurePath(path string) bool {
-	return strings.HasPrefix(path, EntireDir+"/") || path == EntireDir
+	return IsSubpath(EntireDir, path)
+}
+
+// IsSubpath reports whether child is lexically under parent (or equal to it).
+// It uses filepath.Rel, which cleans both inputs and is traversal-resistant:
+// a crafted child like "/a/b/../../../etc/passwd" that escapes parent will
+// produce a relative path starting with ".." and be rejected.
+func IsSubpath(parent, child string) bool {
+	rel, err := filepath.Rel(parent, child)
+	if err != nil {
+		return false
+	}
+	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 // ToRelativePath converts an absolute path to relative.

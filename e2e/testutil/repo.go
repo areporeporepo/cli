@@ -64,7 +64,21 @@ func SetupRepo(t *testing.T, agent agents.Agent) *RepoState {
 	Git(t, dir, "init")
 	Git(t, dir, "config", "user.name", "E2E Test")
 	Git(t, dir, "config", "user.email", "e2e@test.local")
+	Git(t, dir, "config", "core.pager", "cat")
 	Git(t, dir, "commit", "--allow-empty", "-m", "initial commit")
+
+	// External agents need external_agents enabled in settings before enable,
+	// so the CLI can discover the agent binary via PATH during DiscoverAndRegister.
+	if ea, ok := agent.(agents.ExternalAgent); ok && ea.IsExternalAgent() {
+		entireDir := filepath.Join(dir, ".entire")
+		if err := os.MkdirAll(entireDir, 0o755); err != nil {
+			t.Fatalf("create .entire for external agent: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(entireDir, "settings.json"),
+			[]byte("{\"external_agents\": true}\n"), 0o644); err != nil {
+			t.Fatalf("write external_agents setting: %v", err)
+		}
+	}
 
 	entire.Enable(t, dir, agent.EntireAgent())
 	if agent.Name() == "factoryai-droid" {
@@ -72,7 +86,13 @@ func SetupRepo(t *testing.T, agent agents.Agent) *RepoState {
 			t.Fatalf("configure droid repo settings: %v", err)
 		}
 	}
-	PatchSettings(t, dir, map[string]any{"log_level": "debug"})
+	// commit_linking=always ensures the prepare-commit-msg hook adds the
+	// Entire-Checkpoint trailer unconditionally. This is needed because
+	// interactive agents run inside tmux (hasTTY()=true) but can't respond to
+	// prompts, and content detection may fail on the first checkpoint when no
+	// shadow branch exists yet. Prompt-mode agents still exercise the !hasTTY()
+	// fast path since they have no TTY regardless of this setting.
+	PatchSettings(t, dir, map[string]any{"log_level": "debug", "commit_linking": "always"})
 
 	// Copilot CLI blocks on a "No copilot instructions found" notice in fresh
 	// repos that lack .github/copilot-instructions.md, preventing the interactive
@@ -397,6 +417,13 @@ func (s *RepoState) WaitFor(t *testing.T, session agents.Session, pattern string
 	if err != nil {
 		t.Fatalf("WaitFor(%q): %v", pattern, err)
 	}
+}
+
+// IsExternalAgent returns true if the agent implements the ExternalAgent
+// interface and reports itself as external.
+func (s *RepoState) IsExternalAgent() bool {
+	ea, ok := s.Agent.(agents.ExternalAgent)
+	return ok && ea.IsExternalAgent()
 }
 
 // Send sends input to an interactive session and logs it to ConsoleLog.

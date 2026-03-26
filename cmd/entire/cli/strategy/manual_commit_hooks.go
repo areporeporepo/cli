@@ -368,17 +368,9 @@ func (s *ManualCommitStrategy) PrepareCommitMsg(ctx context.Context, commitMsgFi
 	}
 	findSessionsSpan.End()
 
-	// Fast path: when an agent is committing (ACTIVE session + no TTY), skip
-	// content detection and interactive prompts. The agent can't respond to TTY
-	// prompts and the content detection can miss mid-session work (no shadow
-	// branch yet, transcript analysis may fail). Generate a checkpoint ID and
-	// add the trailer directly.
-	if !hasTTY() {
-		for _, state := range sessions {
-			if state.Phase.IsActive() {
-				return s.addTrailerForAgentCommit(logCtx, commitMsgFile, state, source)
-			}
-		}
+	// Fast path: skip content detection for mid-turn agent commits.
+	if s.tryAgentCommitFastPath(ctx, commitMsgFile, sessions, source) {
+		return nil
 	}
 
 	// Check if any session has new content to condense
@@ -502,7 +494,7 @@ func (s *ManualCommitStrategy) PrepareCommitMsg(ctx context.Context, commitMsgFi
 
 	// Write updated message back
 	_, writeCommitMessageSpan := perf.Start(ctx, "write_commit_message")
-	if err := os.WriteFile(commitMsgFile, []byte(message), 0o600); err != nil {
+	if err := os.WriteFile(commitMsgFile, []byte(message), 0o600); err != nil { //nolint:gosec // path from git hook arg
 		writeCommitMessageSpan.RecordError(err)
 		writeCommitMessageSpan.End()
 		return nil
@@ -572,7 +564,7 @@ func (s *ManualCommitStrategy) handleAmendCommitMsg(ctx context.Context, commitM
 
 		// Restore the trailer
 		message = addCheckpointTrailer(message, cpID)
-		if writeErr := os.WriteFile(commitMsgFile, []byte(message), 0o600); writeErr != nil {
+		if writeErr := os.WriteFile(commitMsgFile, []byte(message), 0o600); writeErr != nil { //nolint:gosec // path from git hook arg
 			return nil //nolint:nilerr // Hook must be silent on failure
 		}
 
@@ -857,16 +849,20 @@ func (s *ManualCommitStrategy) PostCommit(ctx context.Context) error { //nolint:
 	committedFileSet := filesChangedInCommit(ctx, worktreePath, commit, headTree, parentTree)
 	resolveTreesSpan.End()
 
+	loopCtx, processSessionsLoop := perf.StartLoop(ctx, "process_sessions")
 	for _, state := range sessions {
 		// Skip fully-condensed ended sessions — no work remains.
 		// These sessions only persist for LastCheckpointID (amend trailer reuse).
 		if state.FullyCondensed && state.Phase == session.PhaseEnded {
 			continue
 		}
-		s.postCommitProcessSession(ctx, repo, state, &transitionCtx, checkpointID,
+		iterCtx, iterSpan := processSessionsLoop.Iteration(loopCtx)
+		s.postCommitProcessSession(iterCtx, repo, state, &transitionCtx, checkpointID,
 			head, commit, newHead, worktreePath, headTree, parentTree, committedFileSet,
 			shadowBranchesToDelete, uncondensedActiveOnBranch)
+		iterSpan.End()
 	}
+	processSessionsLoop.End()
 
 	// Clean up shadow branches — only delete when ALL sessions on the branch are non-active
 	// or were condensed during this PostCommit.
@@ -1116,6 +1112,7 @@ func (s *ManualCommitStrategy) condenseAndUpdateState(
 	state.AttributionBaseCommit = newHead
 	state.StepCount = 0
 	state.CheckpointTranscriptStart = result.TotalTranscriptLines
+	state.CheckpointTranscriptSize = int64(len(result.Transcript))
 
 	// Clear attribution tracking — condensation already used these values
 	state.PromptAttributions = nil
@@ -1301,21 +1298,19 @@ func (s *ManualCommitStrategy) sessionHasNewContent(ctx context.Context, repo *g
 		}
 	}
 
-	// Look for transcript file
+	// Look for transcript file — use blob size for fast growth check when possible.
+	// This avoids reading the full transcript content (potentially tens of MB) just
+	// to count lines, which was the main source of PostCommit latency with many sessions.
 	metadataDir := paths.EntireMetadataDir + "/" + state.SessionID
-	var transcriptLines int
 	var hasTranscriptFile bool
+	var transcriptBlobSize int64
 
-	if file, fileErr := tree.File(metadataDir + "/" + paths.TranscriptFileName); fileErr == nil {
+	if size, sizeErr := tree.Size(metadataDir + "/" + paths.TranscriptFileName); sizeErr == nil {
 		hasTranscriptFile = true
-		if content, contentErr := file.Contents(); contentErr == nil {
-			transcriptLines = countTranscriptItems(state.AgentType, content)
-		}
-	} else if file, fileErr := tree.File(metadataDir + "/" + paths.TranscriptFileNameLegacy); fileErr == nil {
+		transcriptBlobSize = size
+	} else if size, sizeErr := tree.Size(metadataDir + "/" + paths.TranscriptFileNameLegacy); sizeErr == nil {
 		hasTranscriptFile = true
-		if content, contentErr := file.Contents(); contentErr == nil {
-			transcriptLines = countTranscriptItems(state.AgentType, content)
-		}
+		transcriptBlobSize = size
 	}
 
 	// If shadow branch exists but has no transcript (e.g., carry-forward from mid-session commit),
@@ -1359,13 +1354,28 @@ func (s *ManualCommitStrategy) sessionHasNewContent(ctx context.Context, repo *g
 	// For PostCommit context, stagedFiles is nil/empty (files already committed),
 	// so we return true and let the caller do the overlap check via filesOverlapWithContent.
 
-	hasTranscriptGrowth := transcriptLines > state.CheckpointTranscriptStart
+	// Fast path: compare blob size against stored size from last condensation.
+	// This avoids reading the full transcript content just to count items.
+	var hasTranscriptGrowth bool
+	switch {
+	case state.CheckpointTranscriptSize > 0:
+		hasTranscriptGrowth = transcriptBlobSize > state.CheckpointTranscriptSize
+	case state.CheckpointTranscriptStart > 0:
+		// Legacy session: condensed at least once (has line count) but no size tracking.
+		// Cannot safely compare sizes — conservatively assume growth so condensation
+		// can do the full content check. After one condensation with the new CLI,
+		// CheckpointTranscriptSize will be populated and this path won't be hit again.
+		hasTranscriptGrowth = true
+	default:
+		// Never condensed (CheckpointTranscriptStart == 0): any content means growth.
+		hasTranscriptGrowth = transcriptBlobSize > 0
+	}
 	hasUncommittedFiles := len(state.FilesTouched) > 0
 
-	logging.Debug(logCtx, "sessionHasNewContent: transcript check",
+	logging.Debug(logCtx, "sessionHasNewContent: transcript size check",
 		slog.String("session_id", state.SessionID),
-		slog.Int("transcript_lines", transcriptLines),
-		slog.Int("checkpoint_transcript_start", state.CheckpointTranscriptStart),
+		slog.Int64("transcript_blob_size", transcriptBlobSize),
+		slog.Int64("checkpoint_transcript_size", state.CheckpointTranscriptSize),
 		slog.Bool("has_transcript_growth", hasTranscriptGrowth),
 		slog.Bool("has_uncommitted_files", hasUncommittedFiles),
 	)
@@ -1486,6 +1496,15 @@ func (s *ManualCommitStrategy) hasNewTranscriptWork(ctx context.Context, state *
 		return false
 	}
 
+	// Re-resolve transcript path — handles agents that relocate transcripts mid-session.
+	if _, resolveErr := resolveTranscriptPath(state); resolveErr != nil {
+		logging.Debug(logCtx, "hasNewTranscriptWork: transcript path resolution failed",
+			slog.String("session_id", state.SessionID),
+			slog.Any("error", resolveErr),
+		)
+		return false
+	}
+
 	ag, err := agent.GetByAgentType(state.AgentType)
 	if err != nil {
 		return false
@@ -1543,6 +1562,15 @@ func (s *ManualCommitStrategy) extractModifiedFilesFromLiveTranscript(ctx contex
 	logCtx := logging.WithComponent(ctx, "checkpoint")
 
 	if state.TranscriptPath == "" || state.AgentType == "" {
+		return nil
+	}
+
+	// Re-resolve transcript path — handles agents that relocate transcripts mid-session.
+	if _, resolveErr := resolveTranscriptPath(state); resolveErr != nil {
+		logging.Debug(logCtx, "extractModifiedFilesFromLiveTranscript: transcript path resolution failed",
+			slog.String("session_id", state.SessionID),
+			slog.Any("error", resolveErr),
+		)
 		return nil
 	}
 
@@ -1622,10 +1650,40 @@ func (s *ManualCommitStrategy) extractModifiedFilesFromLiveTranscript(ctx contex
 	return modifiedFiles
 }
 
+// tryAgentCommitFastPath skips content detection for mid-turn agent commits.
+// Returns true if the fast path was taken (trailer added or attempt made),
+// false if the caller should continue with normal content detection.
+//
+// The fast path activates when an ACTIVE session exists and either:
+//   - No TTY is available (agent subprocess, CI), or
+//   - commit_linking="always" (user opted into auto-linking — needed because
+//     some agents like Gemini subagents commit mid-turn from processes that
+//     have /dev/tty but can't respond to prompts, and content detection fails
+//     since the shadow branch doesn't exist yet).
+func (s *ManualCommitStrategy) tryAgentCommitFastPath(ctx context.Context, commitMsgFile string, sessions []*SessionState, source string) bool {
+	skipContentDetection := !hasTTY()
+	if !skipContentDetection {
+		if stngs, err := settings.Load(ctx); err == nil {
+			skipContentDetection = stngs.GetCommitLinking() == settings.CommitLinkingAlways
+		}
+	}
+	if !skipContentDetection {
+		return false
+	}
+	logCtx := logging.WithComponent(ctx, "checkpoint")
+	for _, state := range sessions {
+		if state.Phase.IsActive() {
+			_ = s.addTrailerForAgentCommit(logCtx, commitMsgFile, state, source) //nolint:errcheck // always returns nil; kept for signature stability
+			return true
+		}
+	}
+	return false
+}
+
 // addTrailerForAgentCommit handles the fast path when an agent is committing
 // (ACTIVE session + no TTY). Generates a checkpoint ID and adds the trailer
 // directly, bypassing content detection and interactive prompts.
-func (s *ManualCommitStrategy) addTrailerForAgentCommit(logCtx context.Context, commitMsgFile string, state *SessionState, source string) error {
+func (s *ManualCommitStrategy) addTrailerForAgentCommit(logCtx context.Context, commitMsgFile string, state *SessionState, source string) error { //nolint:unparam // kept for signature stability
 	cpID, err := id.Generate()
 	if err != nil {
 		return nil //nolint:nilerr // Hook must be silent on failure
@@ -1652,7 +1710,7 @@ func (s *ManualCommitStrategy) addTrailerForAgentCommit(logCtx context.Context, 
 		slog.String("session_id", state.SessionID),
 	)
 
-	if err := os.WriteFile(commitMsgFile, []byte(message), 0o600); err != nil {
+	if err := os.WriteFile(commitMsgFile, []byte(message), 0o600); err != nil { //nolint:gosec // path from git hook arg
 		return nil //nolint:nilerr // Hook must be silent on failure
 	}
 	return nil
@@ -2160,7 +2218,8 @@ func (s *ManualCommitStrategy) finalizeAllTurnCheckpoints(ctx context.Context, s
 
 	errCount := 0
 
-	// Read full transcript from live transcript file
+	// Read full transcript from live transcript file, re-resolving the path if the
+	// agent relocated it mid-session (e.g., Cursor CLI flat → nested layout change).
 	if state.TranscriptPath == "" {
 		logging.Warn(logCtx, "finalize: no transcript path, skipping",
 			slog.String("session_id", state.SessionID),
@@ -2169,7 +2228,17 @@ func (s *ManualCommitStrategy) finalizeAllTurnCheckpoints(ctx context.Context, s
 		return 1 // Count as error - all checkpoints will be skipped
 	}
 
-	fullTranscript, err := os.ReadFile(state.TranscriptPath)
+	transcriptPath, resolveErr := resolveTranscriptPath(state)
+	if resolveErr != nil {
+		logging.Warn(logCtx, "finalize: transcript path resolution failed, skipping",
+			slog.String("session_id", state.SessionID),
+			slog.Any("error", resolveErr),
+		)
+		state.TurnCheckpointIDs = nil
+		return 1 // Count as error - all checkpoints will be skipped
+	}
+
+	fullTranscript, err := os.ReadFile(transcriptPath) //nolint:gosec // path validated by resolveTranscriptPath
 	if err != nil || len(fullTranscript) == 0 {
 		msg := "finalize: empty transcript, skipping"
 		if err != nil {
@@ -2217,6 +2286,12 @@ func (s *ManualCommitStrategy) finalizeAllTurnCheckpoints(ctx context.Context, s
 
 	store := checkpoint.NewGitStore(repo)
 
+	// Evaluate v2 flag once before the loop to avoid re-reading settings per checkpoint
+	var v2Store *checkpoint.V2GitStore
+	if settings.IsCheckpointsV2Enabled(logCtx) {
+		v2Store = checkpoint.NewV2GitStore(repo)
+	}
+
 	// Update each checkpoint with the full transcript
 	for _, cpIDStr := range state.TurnCheckpointIDs {
 		cpID, parseErr := id.NewCheckpointID(cpIDStr)
@@ -2229,13 +2304,15 @@ func (s *ManualCommitStrategy) finalizeAllTurnCheckpoints(ctx context.Context, s
 			continue
 		}
 
-		updateErr := store.UpdateCommitted(ctx, checkpoint.UpdateCommittedOptions{
+		updateOpts := checkpoint.UpdateCommittedOptions{
 			CheckpointID: cpID,
 			SessionID:    state.SessionID,
 			Transcript:   fullTranscript,
 			Prompts:      prompts,
 			Agent:        state.AgentType,
-		})
+		}
+
+		updateErr := store.UpdateCommitted(ctx, updateOpts)
 		if updateErr != nil {
 			logging.Warn(logCtx, "finalize: failed to update checkpoint",
 				slog.String("checkpoint_id", cpIDStr),
@@ -2243,6 +2320,16 @@ func (s *ManualCommitStrategy) finalizeAllTurnCheckpoints(ctx context.Context, s
 			)
 			errCount++
 			continue
+		}
+
+		// Dual-write: update v2 refs when enabled
+		if v2Store != nil {
+			if v2Err := v2Store.UpdateCommitted(logCtx, updateOpts); v2Err != nil {
+				logging.Warn(logCtx, "v2 dual-write update failed",
+					slog.String("checkpoint_id", cpIDStr),
+					slog.String("error", v2Err.Error()),
+				)
+			}
 		}
 
 		logging.Info(logCtx, "finalize: checkpoint updated with full transcript",
@@ -2360,6 +2447,7 @@ func (s *ManualCommitStrategy) carryForwardToNewShadowBranch(
 	// but this would complicate checkpoint retrieval and require careful tracking of dependencies.
 	state.StepCount = 1
 	state.CheckpointTranscriptStart = 0
+	state.CheckpointTranscriptSize = 0
 	state.LastCheckpointID = ""
 	// NOTE: TurnCheckpointIDs is intentionally NOT cleared here. Those checkpoint
 	// IDs from earlier in the turn still need finalization with the full transcript

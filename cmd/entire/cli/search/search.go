@@ -105,7 +105,7 @@ func Search(ctx context.Context, cfg Config) (*Response, error) {
 	req.Header.Set("Authorization", "token "+cfg.GitHubToken)
 	req.Header.Set("User-Agent", "entire-cli")
 
-	resp, err := http.DefaultClient.Do(req) //nolint:gosec // URL is constructed from trusted config
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("calling search service: %w", err)
 	}
