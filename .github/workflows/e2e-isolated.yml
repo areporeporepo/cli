@@ -30,7 +30,7 @@ jobs:
       - name: Install Claude Code
         run: |
           irm https://claude.ai/install.ps1 | iex
-          echo "$env:USERPROFILE\.claude\local\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "$env:USERPROFILE\.local\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Bootstrap agent
         shell: bash
