@@ -13,6 +13,7 @@ builds:
     goos:
       - darwin
       - linux
+      - windows
     goarch:
       - amd64
       - arm64
@@ -38,6 +39,10 @@ notarize:
 archives:
   - formats:
       - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
     name_template: "entire_{{ .Os }}_{{ .Arch }}"
     files:
       - src: completions/*
@@ -66,6 +71,15 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^chore:"
+
+scoops:
+  - repository:
+      owner: entireio
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/entireio/cli"
+    description: "CLI for Entire"
+    license: MIT
 
 homebrew_casks:
   - name: entire
