@@ -107,6 +107,23 @@ func (env *TestEnv) Cleanup() {
 	// No-op - temp dirs are cleaned up by t.TempDir()
 }
 
+// gitEmptyConfigPath returns the path to an empty file suitable for use as
+// GIT_CONFIG_GLOBAL/GIT_CONFIG_SYSTEM. We use an empty file instead of
+// os.DevNull because git on Windows cannot open NUL as a config file.
+var gitEmptyConfig string
+
+func gitEmptyConfigPath() string {
+	if gitEmptyConfig == "" {
+		f, err := os.CreateTemp("", "git-empty-config-*")
+		if err != nil {
+			panic("create empty git config: " + err.Error())
+		}
+		f.Close()
+		gitEmptyConfig = f.Name()
+	}
+	return gitEmptyConfig
+}
+
 // gitIsolatedEnv returns os.Environ() with git isolation variables set.
 // This prevents user/system git config (global gitignore, aliases, etc.) from
 // affecting test behavior. Use this for any exec.Command that runs git or the
@@ -126,8 +143,8 @@ func gitIsolatedEnv() []string {
 		filtered = append(filtered, e)
 	}
 	return append(filtered,
-		"GIT_CONFIG_GLOBAL=/dev/null", // Isolate from user's global git config (e.g. global gitignore)
-		"GIT_CONFIG_SYSTEM=/dev/null", // Isolate from system git config
+		"GIT_CONFIG_GLOBAL="+gitEmptyConfigPath(), // Isolate from user's global git config (e.g. global gitignore)
+		"GIT_CONFIG_SYSTEM="+gitEmptyConfigPath(), // Isolate from system git config
 	)
 }
 
