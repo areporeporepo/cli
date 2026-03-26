@@ -35,6 +35,7 @@ jobs:
       #   run: go build -o /usr/local/bin/entire ./cmd/entire
 
       - name: Install agent CLI
+        shell: bash
         run: |
           case "${{ inputs.agent }}" in
             claude-code) curl -fsSL https://claude.ai/install.sh | bash ;;
@@ -46,6 +47,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Bootstrap agent
+        shell: bash
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -54,6 +56,7 @@ jobs:
         run: go run ./e2e/bootstrap
 
       - name: Run isolated test
+        shell: bash
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
