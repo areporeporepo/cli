@@ -3,13 +3,6 @@ name: E2E Isolated Test
 on:
   workflow_dispatch:
     inputs:
-      agent:
-        description: "Agent to test"
-        required: true
-        default: "gemini-cli"
-        type: choice
-        options:
-          [claude-code, opencode, gemini-cli, cursor-cli, factoryai-droid]
       test:
         description: "Test name filter (regex)"
         required: true
@@ -34,44 +27,29 @@ jobs:
       # - name: Build entire CLI
       #   run: go build -o /usr/local/bin/entire ./cmd/entire
 
-      - name: Install agent CLI
-        shell: bash
-        run: |
-          case "${{ inputs.agent }}" in
-            claude-code) curl -fsSL https://claude.ai/install.sh | bash ;;
-            opencode)    curl -fsSL https://opencode.ai/install | bash ;;
-            gemini-cli)  npm install -g @google/gemini-cli ;;
-            cursor-cli)  curl https://cursor.com/install -fsS | bash ;;
-            factoryai-droid) curl -fsSL https://app.factory.ai/cli | sh ;;
-          esac
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install Claude Code
+        run: irm https://claude.ai/install.ps1 | iex
 
       - name: Bootstrap agent
         shell: bash
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          FACTORY_API_KEY: ${{ secrets.FACTORY_API_KEY }}
         run: go run ./e2e/bootstrap
 
       - name: Run isolated test
         shell: bash
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          FACTORY_API_KEY: ${{ secrets.FACTORY_API_KEY }}
           E2E_ARTIFACT_DIR: ${{ github.workspace }}/e2e-artifacts
           E2E_ENTIRE_BIN: /usr/local/bin/entire
         run: |
           mkdir -p "$E2E_ARTIFACT_DIR"
-          mise run test:e2e --agent ${{ inputs.agent }} "${{ inputs.test }}"
+          mise run test:e2e --agent claude-code "${{ inputs.test }}"
 
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-isolated-${{ inputs.agent }}-${{ inputs.test }}
+          name: e2e-isolated-claude-code-${{ inputs.test }}
           path: e2e-artifacts/
           retention-days: 7
