@@ -756,7 +756,7 @@ func resumeSession(ctx context.Context, w, errW io.Writer, metadata *strategy.Ch
 	sessions, restoreErr := strat.RestoreLogsOnly(ctx, w, errW, point, force)
 	if restoreErr != nil || len(sessions) == 0 {
 		// Fall back to single-session restore (e.g., old checkpoints without agent metadata)
-		return resumeSingleSession(ctx, w, errW, ag, sessionID, checkpointID, repoRoot, force)
+		return resumeSingleSession(ctx, w, errW, ag, sessionID, checkpointID, metadata.SessionCount, repoRoot, force)
 	}
 
 	logging.Debug(logCtx, "resume session completed",
@@ -795,7 +795,12 @@ func displayRestoredSessions(w io.Writer, sessions []strategy.RestoredSession) e
 // resumeSingleSession restores a single session (fallback when multi-session restore fails).
 // Always overwrites existing session logs to ensure consistency with checkpoint state.
 // If force is false, prompts for confirmation when local log has newer timestamps.
-func resumeSingleSession(ctx context.Context, w, errW io.Writer, ag agent.Agent, sessionID string, checkpointID id.CheckpointID, repoRoot string, force bool) error {
+func resumeSingleSession(ctx context.Context, w, errW io.Writer, ag agent.Agent, sessionID string, checkpointID id.CheckpointID, sessionCount int, repoRoot string, force bool) error {
+	latestSessionIndex := 0
+	if sessionCount > 1 {
+		latestSessionIndex = sessionCount - 1
+	}
+
 	sessionLogPath, err := resolveTranscriptPath(ctx, sessionID, ag)
 	if err != nil {
 		return fmt.Errorf("failed to resolve transcript path: %w", err)
@@ -817,7 +822,7 @@ func resumeSingleSession(ctx context.Context, w, errW io.Writer, ag agent.Agent,
 	if repoErr != nil {
 		logContent, _, err = checkpoint.LookupSessionLog(ctx, checkpointID)
 	} else {
-		content, resolveErr := checkpoint.ResolveTranscript(ctx, repo, checkpointID, 0, settings.IsCheckpointsV2Enabled(ctx))
+		content, resolveErr := checkpoint.ResolveTranscript(ctx, repo, checkpointID, latestSessionIndex, settings.IsCheckpointsV2Enabled(ctx))
 		if resolveErr == nil && content != nil && len(content.Transcript) > 0 {
 			logContent = content.Transcript
 		} else {
