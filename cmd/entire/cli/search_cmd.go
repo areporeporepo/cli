@@ -6,29 +6,32 @@ import (
 	"os"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/entireio/cli/cmd/entire/cli/auth"
 	"github.com/entireio/cli/cmd/entire/cli/jsonutil"
 	"github.com/entireio/cli/cmd/entire/cli/search"
 	"github.com/entireio/cli/cmd/entire/cli/strategy"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func newSearchCmd() *cobra.Command {
-	var limitFlag int
+	var (
+		jsonOutput bool
+		limitFlag  int
+	)
 
 	cmd := &cobra.Command{
-		Use:   "search <query>",
+		Use:   "search [query]",
 		Short: "Search checkpoints using semantic and keyword matching",
 		Long: `Search checkpoints using hybrid search (semantic + keyword),
 powered by the Entire search service.
 
 Requires authentication via 'entire login' (GitHub device flow).
 
-Results are ranked using Reciprocal Rank Fusion (RRF) combining
-OpenAI embeddings with BM25 full-text search.
-
-Output is JSON by default for easy consumption by agents and scripts.`,
-		Args: cobra.MinimumNArgs(1),
+Run without arguments to open an interactive search. Results are
+displayed in an interactive table. Use --json for machine-readable output.`,
+		Args: cobra.ArbitraryArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 			query := strings.Join(args, " ")
@@ -68,32 +71,83 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 				serviceURL = search.DefaultServiceURL
 			}
 
-			resp, err := search.Search(ctx, search.Config{
+			searchCfg := search.Config{
 				ServiceURL:  serviceURL,
 				GitHubToken: ghToken,
 				Owner:       owner,
 				Repo:        repoName,
 				Query:       query,
 				Limit:       limitFlag,
-			})
+			}
+
+			w := cmd.OutOrStdout()
+
+			// Detect if stdout is a terminal
+			isTerminal := false
+			if f, ok := w.(*os.File); ok {
+				isTerminal = term.IsTerminal(int(f.Fd())) //nolint:gosec // G115: uintptr->int is safe for fd
+			}
+
+			// No query provided + non-interactive = error
+			if query == "" && (jsonOutput || !isTerminal) {
+				return errors.New("query required when using --json or piped output. Usage: entire search <query>")
+			}
+
+			// No query provided + interactive = open TUI with search bar focused
+			if query == "" {
+				styles := newStatusStyles(w)
+				model := newSearchModel(nil, "", 0, searchCfg, styles)
+				model.mode = modeSearch
+				model.input.Focus()
+				p := tea.NewProgram(model)
+				if _, err := p.Run(); err != nil {
+					return fmt.Errorf("TUI error: %w", err)
+				}
+				return nil
+			}
+
+			resp, err := search.Search(ctx, searchCfg)
 			if err != nil {
 				return fmt.Errorf("search failed: %w", err)
 			}
 
-			if len(resp.Results) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "[]")
+			// JSON output: explicit flag or piped/redirected stdout
+			if jsonOutput || !isTerminal {
+				if len(resp.Results) == 0 {
+					fmt.Fprintln(w, "[]")
+					return nil
+				}
+				data, err := jsonutil.MarshalIndentWithNewline(resp.Results, "", "  ")
+				if err != nil {
+					return fmt.Errorf("marshaling results: %w", err)
+				}
+				fmt.Fprint(w, string(data))
 				return nil
 			}
 
-			data, err := jsonutil.MarshalIndentWithNewline(resp.Results, "", "  ")
-			if err != nil {
-				return fmt.Errorf("marshaling results: %w", err)
+			styles := newStatusStyles(w)
+
+			// Accessible mode: static table
+			if IsAccessibleMode() {
+				if len(resp.Results) == 0 {
+					fmt.Fprintln(w, "No results found.")
+					return nil
+				}
+				renderSearchStatic(w, resp.Results, query, resp.Total, styles)
+				return nil
 			}
-			fmt.Fprint(cmd.OutOrStdout(), string(data))
+
+			// Interactive TUI
+			model := newSearchModel(resp.Results, query, resp.Total, searchCfg, styles)
+			p := tea.NewProgram(model)
+			if _, err := p.Run(); err != nil {
+				return fmt.Errorf("TUI error: %w", err)
+			}
 			return nil
 		},
 	}
 
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 	cmd.Flags().IntVar(&limitFlag, "limit", 20, "Maximum number of results")
 
 	return cmd
