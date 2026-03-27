@@ -30,37 +30,29 @@ type searchResultsMsg struct {
 	err     error
 }
 
-// searchStyles holds all lipgloss styles for the search TUI.
+// searchStyles holds lipgloss styles specific to the search TUI.
+// Styles shared with the status TUI (bold, dim, green, red, cyan, agent/id)
+// are accessed via the embedded statusStyles.
 type searchStyles struct {
-	useColor     bool
+	statusStyles
+
 	sectionTitle lipgloss.Style // bold uppercase section headers
 	label        lipgloss.Style // dim key labels in detail panel
-	id           lipgloss.Style // amber for IDs/SHAs
-	branch       lipgloss.Style // cyan for branch names
-	dim          lipgloss.Style // dimmed secondary text
-	bold         lipgloss.Style // bold emphasis
 	selected     lipgloss.Style // highlighted selected row
-	match        lipgloss.Style // green for match type
 	helpKey      lipgloss.Style // colored key hints in footer
 	helpSep      lipgloss.Style // dim separator dots in footer
 	detailTitle  lipgloss.Style // colored title inside detail card
 	detailBorder lipgloss.Style // border style for detail card
-	errStyle     lipgloss.Style // red for errors
 }
 
-func newSearchStyles(colorEnabled bool) searchStyles {
-	s := searchStyles{useColor: colorEnabled}
-	if !colorEnabled {
+func newSearchStyles(ss statusStyles) searchStyles {
+	s := searchStyles{statusStyles: ss}
+	if !ss.colorEnabled {
 		return s
 	}
 	s.sectionTitle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("244"))
 	s.label = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-	s.id = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)
-	s.branch = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
-	s.dim = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	s.bold = lipgloss.NewStyle().Bold(true)
 	s.selected = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)
-	s.match = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
 	s.helpKey = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
 	s.helpSep = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	s.detailTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)
@@ -68,7 +60,6 @@ func newSearchStyles(colorEnabled bool) searchStyles {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("243")).
 		Padding(1, 2)
-	s.errStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 	return s
 }
 
@@ -78,7 +69,6 @@ type searchModel struct {
 	cursor    int
 	total     int
 	width     int
-	height    int
 	mode      searchMode
 	loading   bool
 	searchErr string
@@ -88,7 +78,7 @@ type searchModel struct {
 }
 
 func newSearchModel(results []search.Result, query string, total int, cfg search.Config, ss statusStyles) searchModel {
-	styles := newSearchStyles(ss.colorEnabled)
+	styles := newSearchStyles(ss)
 
 	ti := textinput.New()
 	ti.SetValue(query)
@@ -105,7 +95,6 @@ func newSearchModel(results []search.Result, query string, total int, cfg search
 
 	return searchModel{
 		results:   results,
-		cursor:    0,
 		total:     total,
 		width:     ss.width,
 		mode:      modeBrowse,
@@ -138,7 +127,6 @@ func (m searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) { //nolint:ireturn
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
-		m.height = msg.Height
 		m.input.Width = max(msg.Width-6, 30)
 		return m, nil
 
@@ -218,7 +206,7 @@ func (m searchModel) View() string {
 
 	// Section: SEARCH
 	b.WriteString("\n")
-	b.WriteString(pad + m.s(m.styles.sectionTitle, "SEARCH"))
+	b.WriteString(pad + m.styles.render(m.styles.sectionTitle, "SEARCH"))
 	b.WriteString("\n\n")
 
 	// Search input
@@ -226,29 +214,29 @@ func (m searchModel) View() string {
 		b.WriteString(pad + m.input.View())
 	} else {
 		query := m.input.Value()
-		b.WriteString(pad + m.s(m.styles.id, "›") + " " + m.s(m.styles.bold, query))
+		b.WriteString(pad + m.styles.render(m.styles.agent, "›") + " " + m.styles.render(m.styles.bold, query))
 	}
 	b.WriteString("\n\n")
 
 	// Loading / error / empty states
 	if m.loading {
-		b.WriteString(pad + m.s(m.styles.dim, "Searching...") + "\n")
+		b.WriteString(pad + m.styles.render(m.styles.dim, "Searching...") + "\n")
 		b.WriteString(m.viewHelp())
 		return b.String()
 	}
 	if m.searchErr != "" {
-		b.WriteString(pad + m.s(m.styles.errStyle, "Error: "+m.searchErr) + "\n")
+		b.WriteString(pad + m.styles.render(m.styles.red, "Error: "+m.searchErr) + "\n")
 		b.WriteString(m.viewHelp())
 		return b.String()
 	}
 	if len(m.results) == 0 {
-		b.WriteString(pad + m.s(m.styles.dim, "No results found.") + "\n")
+		b.WriteString(pad + m.styles.render(m.styles.dim, "No results found.") + "\n")
 		b.WriteString(m.viewHelp())
 		return b.String()
 	}
 
 	// Section: RESULTS
-	b.WriteString(pad + m.s(m.styles.sectionTitle, "RESULTS"))
+	b.WriteString(pad + m.styles.render(m.styles.sectionTitle, "RESULTS"))
 	b.WriteString("\n\n")
 
 	// Table
@@ -282,15 +270,15 @@ func (m searchModel) viewTable() string {
 		cols.prompt, "Prompt",
 		"Author",
 	)
-	b.WriteString(pad + m.s(m.styles.dim, hdr) + "\n")
+	b.WriteString(pad + m.styles.render(m.styles.dim, hdr) + "\n")
 
 	// Header separator
-	b.WriteString(pad + m.s(m.styles.dim, strings.Repeat("─", contentWidth)) + "\n")
+	b.WriteString(pad + m.styles.render(m.styles.dim, strings.Repeat("─", contentWidth)) + "\n")
 
 	// Rows
 	for i, r := range m.results {
 		row := m.viewRow(r, cols)
-		if i == m.cursor && m.styles.useColor {
+		if i == m.cursor && m.styles.colorEnabled {
 			b.WriteString(pad + m.styles.selected.Render(row))
 		} else {
 			b.WriteString(pad + row)
@@ -320,28 +308,18 @@ func (m searchModel) viewDetailCard(r search.Result) string {
 	var content strings.Builder
 
 	// Title
-	content.WriteString(m.s(m.styles.detailTitle, "Checkpoint Detail"))
+	content.WriteString(m.styles.render(m.styles.detailTitle, "Checkpoint Detail"))
 	content.WriteString("\n\n")
 
 	writeField := func(label, value string) {
 		lbl := fmt.Sprintf("%-*s", labelWidth, label+":")
-		content.WriteString(m.s(m.styles.label, lbl) + " " + value + "\n")
+		content.WriteString(m.styles.render(m.styles.label, lbl) + " " + value + "\n")
 	}
 
 	writeField("ID", r.Data.ID)
 	writeField("Prompt", r.Data.Prompt)
 
-	// Commit
-	commitSHA := derefStr(r.Data.CommitSHA, "—")
-	if r.Data.CommitSHA != nil && len(*r.Data.CommitSHA) > 7 {
-		commitSHA = (*r.Data.CommitSHA)[:7]
-	}
-	commitMsg := derefStr(r.Data.CommitMessage, "")
-	if commitMsg != "" {
-		writeField("Commit", commitSHA+" "+commitMsg)
-	} else {
-		writeField("Commit", commitSHA)
-	}
+	writeField("Commit", formatCommit(r.Data.CommitSHA, r.Data.CommitMessage))
 
 	writeField("Branch", r.Data.Branch)
 	writeField("Repo", r.Data.Org+"/"+r.Data.Repo)
@@ -351,13 +329,13 @@ func (m searchModel) viewDetailCard(r search.Result) string {
 
 	if r.Meta.Snippet != "" {
 		content.WriteString("\n")
-		content.WriteString(m.s(m.styles.label, "Snippet:") + "\n")
+		content.WriteString(m.styles.render(m.styles.label, "Snippet:") + "\n")
 		content.WriteString(r.Meta.Snippet + "\n")
 	}
 
 	if len(r.Data.FilesTouched) > 0 {
 		content.WriteString("\n")
-		content.WriteString(m.s(m.styles.label, "Files:") + "\n")
+		content.WriteString(m.styles.render(m.styles.label, "Files:") + "\n")
 		for _, f := range r.Data.FilesTouched {
 			content.WriteString(f + "\n")
 		}
@@ -365,40 +343,27 @@ func (m searchModel) viewDetailCard(r search.Result) string {
 
 	cardContent := strings.TrimRight(content.String(), "\n")
 
-	if !m.styles.useColor {
-		// Plain text fallback — simple indent
-		lines := strings.Split(cardContent, "\n")
-		var plain strings.Builder
-		for _, line := range lines {
-			plain.WriteString(" " + line + "\n")
-		}
-		return plain.String()
+	card := cardContent
+	if m.styles.colorEnabled {
+		card = m.styles.detailBorder.Width(max(innerWidth, 40)).Render(cardContent)
 	}
 
-	card := m.styles.detailBorder.Width(max(innerWidth, 40)).Render(cardContent)
-
-	// Indent the card by 1 space
-	lines := strings.Split(card, "\n")
-	var indented strings.Builder
-	for _, line := range lines {
-		indented.WriteString(" " + line + "\n")
-	}
-	return indented.String()
+	return indentLines(card, " ")
 }
 
 func (m searchModel) viewHelp() string {
-	dot := m.s(m.styles.helpSep, " · ")
+	dot := m.styles.render(m.styles.helpSep, " · ")
 
 	if m.mode == modeSearch {
-		return m.s(m.styles.helpKey, "enter") + " search" + dot +
-			m.s(m.styles.helpKey, "esc") + " cancel" + "\n"
+		return m.styles.render(m.styles.helpKey, "enter") + " search" + dot +
+			m.styles.render(m.styles.helpKey, "esc") + " cancel" + "\n"
 	}
 
-	left := m.s(m.styles.helpKey, "/") + " search" + dot +
-		m.s(m.styles.helpKey, "enter") + " select" + dot +
-		m.s(m.styles.helpKey, "esc") + " unfocus" + dot +
-		m.s(m.styles.helpKey, "j/k") + " navigate" + dot +
-		m.s(m.styles.helpKey, "q") + " quit"
+	left := m.styles.render(m.styles.helpKey, "/") + " search" + dot +
+		m.styles.render(m.styles.helpKey, "enter") + " select" + dot +
+		m.styles.render(m.styles.helpKey, "esc") + " unfocus" + dot +
+		m.styles.render(m.styles.helpKey, "j/k") + " navigate" + dot +
+		m.styles.render(m.styles.helpKey, "q") + " quit"
 
 	right := fmt.Sprintf("%d results", m.total)
 
@@ -407,15 +372,17 @@ func (m searchModel) viewHelp() string {
 		gap = 1
 	}
 
-	return left + strings.Repeat(" ", gap) + m.s(m.styles.dim, right) + "\n"
+	return left + strings.Repeat(" ", gap) + m.styles.render(m.styles.dim, right) + "\n"
 }
 
-// s applies a lipgloss style, returning plain text when color is off.
-func (m searchModel) s(style lipgloss.Style, text string) string {
-	if !m.styles.useColor {
-		return text
+// indentLines prefixes every line of text with the given prefix.
+func indentLines(text, prefix string) string {
+	lines := strings.Split(text, "\n")
+	var b strings.Builder
+	for _, line := range lines {
+		b.WriteString(prefix + line + "\n")
 	}
-	return style.Render(text)
+	return b.String()
 }
 
 // ─── Column Layout ───────────────────────────────────────────────────────────
@@ -432,10 +399,9 @@ type columnLayout struct {
 // computeColumns calculates column widths from terminal width.
 func computeColumns(width int) columnLayout {
 	const (
-		ageWidth    = 10
-		idWidth     = 12
-		authorWidth = 0 // author takes remaining
-		gaps        = 4 // spaces between columns
+		ageWidth = 10
+		idWidth  = 12
+		gaps     = 4 // spaces between columns
 	)
 
 	remaining := width - ageWidth - idWidth - gaps

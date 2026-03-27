@@ -12,7 +12,6 @@ import (
 	"github.com/entireio/cli/cmd/entire/cli/search"
 	"github.com/entireio/cli/cmd/entire/cli/strategy"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 func newSearchCmd() *cobra.Command {
@@ -81,12 +80,7 @@ displayed in an interactive table. Use --json for machine-readable output.`,
 			}
 
 			w := cmd.OutOrStdout()
-
-			// Detect if stdout is a terminal
-			isTerminal := false
-			if f, ok := w.(*os.File); ok {
-				isTerminal = term.IsTerminal(int(f.Fd())) //nolint:gosec // G115: uintptr->int is safe for fd
-			}
+			isTerminal := isTerminalWriter(w)
 
 			// No query provided + non-interactive = error
 			if query == "" && (jsonOutput || !isTerminal) {
