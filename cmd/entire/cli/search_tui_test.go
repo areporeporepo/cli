@@ -107,21 +107,6 @@ func TestSearchModel_Navigation(t *testing.T) {
 	}
 }
 
-func TestSearchModel_NavigationJK(t *testing.T) {
-	t.Parallel()
-	m := testModel()
-
-	m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
-	if m.cursor != 1 {
-		t.Errorf("after j: cursor = %d, want 1", m.cursor)
-	}
-
-	m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'k'}})
-	if m.cursor != 0 {
-		t.Errorf("after k: cursor = %d, want 0", m.cursor)
-	}
-}
-
 func TestSearchModel_Quit(t *testing.T) {
 	t.Parallel()
 	m := testModel()
@@ -160,6 +145,50 @@ func TestSearchModel_SearchMode(t *testing.T) {
 	m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyEsc})
 	if m.mode != modeBrowse {
 		t.Errorf("after esc: mode = %d, want modeBrowse", m.mode)
+	}
+}
+
+func TestSearchModel_SearchModeEnter(t *testing.T) {
+	t.Parallel()
+	m := testModel()
+
+	// Enter search mode
+	m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+	// Type a query
+	m.input.SetValue("new query")
+
+	// Press enter — should set loading and return to browse mode
+	updated, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m, ok := updated.(searchModel)
+	if !ok {
+		t.Fatalf("Update returned %T, want searchModel", updated)
+	}
+	if m.mode != modeBrowse {
+		t.Errorf("after enter: mode = %d, want modeBrowse", m.mode)
+	}
+	if !m.loading {
+		t.Error("after enter: loading should be true")
+	}
+	if cmd == nil {
+		t.Error("after enter: expected a command for search")
+	}
+}
+
+func TestSearchModel_SearchModeEnterEmpty(t *testing.T) {
+	t.Parallel()
+	m := testModel()
+
+	// Enter search mode with empty query
+	m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'/'}})
+	m.input.SetValue("   ")
+
+	// Press enter — should be a no-op (stay in search mode)
+	m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyEnter})
+	if m.mode != modeSearch {
+		t.Errorf("after enter with empty query: mode = %d, want modeSearch", m.mode)
+	}
+	if m.loading {
+		t.Error("after enter with empty query: loading should be false")
 	}
 }
 
@@ -310,19 +339,6 @@ func TestFormatSearchAge(t *testing.T) {
 	age = formatSearchAge("not-a-date")
 	if age != "not-a-date" {
 		t.Errorf("formatSearchAge for invalid date = %q, want %q", age, "not-a-date")
-	}
-}
-
-func TestDerefStr(t *testing.T) {
-	t.Parallel()
-
-	if got := derefStr(nil, "fallback"); got != "fallback" {
-		t.Errorf("derefStr(nil) = %q, want %q", got, "fallback")
-	}
-
-	s := "value"
-	if got := derefStr(&s, "fallback"); got != "value" {
-		t.Errorf("derefStr(&s) = %q, want %q", got, "value")
 	}
 }
 

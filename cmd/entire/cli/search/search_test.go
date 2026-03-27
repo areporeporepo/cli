@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -198,6 +199,30 @@ func TestSearch_ErrorRawBody(t *testing.T) {
 	}
 	if got := err.Error(); got != "search service returned 502: <html>Bad Gateway</html>" {
 		t.Errorf("error = %q", got)
+	}
+}
+
+func TestSearch_ErrorFieldOn200(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(Response{Error: "user not found in Entire"}) //nolint:errcheck // test helper response
+	}))
+	defer srv.Close()
+
+	_, err := Search(context.Background(), Config{
+		ServiceURL:  srv.URL,
+		GitHubToken: "tok",
+		Owner:       "o",
+		Repo:        "r",
+		Query:       "q",
+	})
+	if err == nil {
+		t.Fatal("expected error when server returns 200 with error field")
+	}
+	if !strings.Contains(err.Error(), "user not found") {
+		t.Errorf("error = %q, want message containing 'user not found'", err.Error())
 	}
 }
 

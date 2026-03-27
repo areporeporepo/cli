@@ -47,11 +47,10 @@ type Result struct {
 
 // Response is the search service response.
 type Response struct {
-	Results []Result    `json:"results"`
-	Total   int         `json:"total"`
-	Page    int         `json:"page"`
-	Timing  interface{} `json:"timing,omitempty"`
-	Error   string      `json:"error,omitempty"`
+	Results []Result `json:"results"`
+	Total   int      `json:"total"`
+	Page    int      `json:"page"`
+	Error   string   `json:"error,omitempty"`
 }
 
 // Config holds the configuration for a search request.
@@ -63,6 +62,8 @@ type Config struct {
 	Query       string
 	Limit       int
 }
+
+var httpClient = &http.Client{Timeout: apiTimeout}
 
 // Search calls the search service to perform a hybrid search.
 func Search(ctx context.Context, cfg Config) (*Response, error) {
@@ -96,7 +97,7 @@ func Search(ctx context.Context, cfg Config) (*Response, error) {
 	req.Header.Set("Authorization", "token "+cfg.GitHubToken)
 	req.Header.Set("User-Agent", "entire-cli")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("calling search service: %w", err)
 	}
@@ -120,6 +121,10 @@ func Search(ctx context.Context, cfg Config) (*Response, error) {
 	var result Response
 	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, fmt.Errorf("parsing response: %w", err)
+	}
+
+	if result.Error != "" {
+		return nil, fmt.Errorf("search service error: %s", result.Error)
 	}
 
 	return &result, nil

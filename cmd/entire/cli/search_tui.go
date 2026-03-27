@@ -360,8 +360,6 @@ func (m searchModel) viewHelp() string {
 	}
 
 	left := m.styles.render(m.styles.helpKey, "/") + " search" + dot +
-		m.styles.render(m.styles.helpKey, "enter") + " select" + dot +
-		m.styles.render(m.styles.helpKey, "esc") + " unfocus" + dot +
 		m.styles.render(m.styles.helpKey, "j/k") + " navigate" + dot +
 		m.styles.render(m.styles.helpKey, "q") + " quit"
 

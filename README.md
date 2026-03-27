@@ -213,20 +213,23 @@ go test -tags=integration ./cmd/entire/cli/integration_test -run TestLogin
 Search checkpoints across the current repository using hybrid search (semantic + keyword). Results are ranked using Reciprocal Rank Fusion (RRF), combining OpenAI embeddings with BM25 full-text search.
 
 ```bash
-# Search with pretty-printed output
-entire search "implement login feature"
+# Interactive search (opens TUI with search bar)
+entire search
 
-# Filter by branch
-entire search "fix auth bug" --branch main
+# Search with a query
+entire search "implement login feature"
 
 # Limit results
 entire search "add tests" --limit 10
+
+# JSON output for scripting
+entire search "fix auth bug" --json
 ```
 
-| Flag       | Description                          |
-| ---------- | ------------------------------------ |
-| `--branch` | Filter results by branch name        |
-| `--limit`  | Maximum number of results (default: 20) |
+| Flag      | Description                             |
+| --------- | --------------------------------------- |
+| `--json`  | Output results as JSON                  |
+| `--limit` | Maximum number of results (default: 20) |
 
 **Authentication:** `entire search` requires authentication. Run `entire login` first to authenticate via Entire device auth — your token is stored in the OS keyring and used automatically.
 
