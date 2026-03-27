@@ -14,10 +14,7 @@ import (
 )
 
 func newSearchCmd() *cobra.Command {
-	var (
-		branchFlag string
-		limitFlag  int
-	)
+	var limitFlag int
 
 	cmd := &cobra.Command{
 		Use:   "search <query>",
@@ -77,7 +74,6 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 				Owner:       owner,
 				Repo:        repoName,
 				Query:       query,
-				Branch:      branchFlag,
 				Limit:       limitFlag,
 			})
 			if err != nil {
@@ -98,7 +94,6 @@ Output is JSON by default for easy consumption by agents and scripts.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&branchFlag, "branch", "", "Filter results by branch name")
 	cmd.Flags().IntVar(&limitFlag, "limit", 20, "Maximum number of results")
 
 	return cmd

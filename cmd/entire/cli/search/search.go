@@ -18,46 +18,40 @@ const DefaultServiceURL = "https://entire.io"
 
 // Meta contains search ranking metadata for a result.
 type Meta struct {
-	RRFScore   float64 `json:"rrfScore"`
-	MatchType  string  `json:"matchType"`
-	VectorRank *int    `json:"vectorRank"`
-	BM25Rank   *int    `json:"bm25Rank"`
+	MatchType string  `json:"matchType"`
+	Score     float64 `json:"score"`
+	Snippet   string  `json:"snippet,omitempty"`
 }
 
-// Result represents a single search result from the search service.
+// CheckpointResult represents a checkpoint returned by the search service.
+type CheckpointResult struct {
+	ID             string   `json:"id"`
+	Prompt         string   `json:"prompt"`
+	CommitMessage  *string  `json:"commitMessage"`
+	CommitSHA      *string  `json:"commitSha"`
+	Branch         string   `json:"branch"`
+	Org            string   `json:"org"`
+	Repo           string   `json:"repo"`
+	Author         string   `json:"author"`
+	AuthorUsername *string  `json:"authorUsername"`
+	CreatedAt      string   `json:"createdAt"`
+	FilesTouched   []string `json:"filesTouched"`
+}
+
+// Result wraps a search result with its type and ranking metadata.
 type Result struct {
-	CheckpointID         string      `json:"checkpointId"`
-	Branch               string      `json:"branch"`
-	CommitSHA            *string     `json:"commitSha"`
-	CommitMessage        *string     `json:"commitMessage"`
-	CommitAuthor         *string     `json:"commitAuthor"`
-	CommitAuthorUsername *string     `json:"commitAuthorUsername"`
-	CommitDate           *string     `json:"commitDate"`
-	Additions            int         `json:"additions"`
-	Deletions            int         `json:"deletions"`
-	FilesChanged         int         `json:"filesChanged"`
-	FilesTouched         []string    `json:"filesTouched"`
-	FileStats            interface{} `json:"fileStats"`
-	Prompt               *string     `json:"prompt"`
-	Agent                string      `json:"agent"`
-	Steps                int         `json:"steps"`
-	SessionCount         int         `json:"sessionCount"`
-	CreatedAt            string      `json:"createdAt"`
-	InputTokens          *int        `json:"inputTokens"`
-	OutputTokens         *int        `json:"outputTokens"`
-	CacheCreationTokens  *int        `json:"cacheCreationTokens"`
-	CacheReadTokens      *int        `json:"cacheReadTokens"`
-	APICallCount         *int        `json:"apiCallCount"`
-	Meta                 Meta        `json:"searchMeta"`
+	Type string           `json:"type"`
+	Data CheckpointResult `json:"data"`
+	Meta Meta             `json:"searchMeta"`
 }
 
 // Response is the search service response.
 type Response struct {
-	Results []Result `json:"results"`
-	Query   string   `json:"query"`
-	Repo    string   `json:"repo"`
-	Total   int      `json:"total"`
-	Error   string   `json:"error,omitempty"`
+	Results []Result    `json:"results"`
+	Total   int         `json:"total"`
+	Page    int         `json:"page"`
+	Timing  interface{} `json:"timing,omitempty"`
+	Error   string      `json:"error,omitempty"`
 }
 
 // Config holds the configuration for a search request.
@@ -67,7 +61,6 @@ type Config struct {
 	Owner       string
 	Repo        string
 	Query       string
-	Branch      string
 	Limit       int
 }
 
@@ -81,18 +74,16 @@ func Search(ctx context.Context, cfg Config) (*Response, error) {
 		serviceURL = DefaultServiceURL
 	}
 
-	// Build URL: /search/v1/:owner/:repo?q=...&branch=...&limit=...
 	u, err := url.Parse(serviceURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing service URL: %w", err)
 	}
-	u.Path = fmt.Sprintf("/search/v1/%s/%s", url.PathEscape(cfg.Owner), url.PathEscape(cfg.Repo))
+	u.Path = "/search/v1/search"
 
 	q := u.Query()
 	q.Set("q", cfg.Query)
-	if cfg.Branch != "" {
-		q.Set("branch", cfg.Branch)
-	}
+	q.Set("repo", cfg.Owner+"/"+cfg.Repo)
+	q.Set("types", "checkpoints")
 	if cfg.Limit > 0 {
 		q.Set("limit", strconv.Itoa(cfg.Limit))
 	}
