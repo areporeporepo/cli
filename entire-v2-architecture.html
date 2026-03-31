@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Entire V2 Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a1a; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; color: #e0e0e0; }
+  canvas { display: block; }
+  #info {
+    position: absolute; top: 16px; left: 16px;
+    background: rgba(10,10,30,0.85); border: 1px solid rgba(100,140,255,0.3);
+    border-radius: 12px; padding: 16px 20px; max-width: 340px;
+    backdrop-filter: blur(10px); z-index: 10;
+  }
+  #info h1 { font-size: 18px; color: #7ba4ff; margin-bottom: 6px; }
+  #info p { font-size: 12px; color: #999; line-height: 1.5; }
+  #legend {
+    position: absolute; bottom: 16px; left: 16px;
+    background: rgba(10,10,30,0.85); border: 1px solid rgba(100,140,255,0.2);
+    border-radius: 12px; padding: 14px 18px; z-index: 10;
+    backdrop-filter: blur(10px);
+  }
+  #legend h3 { font-size: 13px; color: #7ba4ff; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; margin-bottom: 5px; font-size: 11px; }
+  .legend-color { width: 14px; height: 14px; border-radius: 3px; margin-right: 8px; flex-shrink: 0; }
+  #tooltip {
+    position: absolute; display: none; background: rgba(10,10,40,0.95);
+    border: 1px solid rgba(100,180,255,0.5); border-radius: 8px;
+    padding: 12px 16px; max-width: 320px; pointer-events: none; z-index: 20;
+    backdrop-filter: blur(10px);
+  }
+  #tooltip h4 { color: #7ba4ff; font-size: 14px; margin-bottom: 4px; }
+  #tooltip p { color: #bbb; font-size: 11px; line-height: 1.5; }
+  #view-toggle {
+    position: absolute; top: 16px; right: 16px; z-index: 10;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  #view-toggle button {
+    background: rgba(10,10,30,0.85); border: 1px solid rgba(100,140,255,0.3);
+    color: #7ba4ff; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+    font-size: 12px; backdrop-filter: blur(10px); transition: all 0.2s;
+  }
+  #view-toggle button:hover, #view-toggle button.active {
+    background: rgba(60,90,180,0.4); border-color: rgba(100,160,255,0.6);
+  }
+</style>
+</head>
+<body>
+
+<div id="info">
+  <h1>Entire V2 Architecture</h1>
+  <p>From pfleidi's handwritten notes &amp; RFD-009.<br>
+  Drag to rotate. Scroll to zoom. Click nodes for details.</p>
+</div>
+
+<div id="view-toggle">
+  <button class="active" onclick="setView('full')">Full System</button>
+  <button onclick="setView('dataflow')">Data Flow</button>
+  <button onclick="setView('workstreams')">Workstreams</button>
+  <button onclick="setView('rollout')">Rollout Phases</button>
+</div>
+
+<div id="legend">
+  <h3>Legend</h3>
+  <div class="legend-item"><div class="legend-color" style="background:#4a90d9"></div>AI Agents</div>
+  <div class="legend-item"><div class="legend-color" style="background:#e8734a"></div>CLI / Hooks</div>
+  <div class="legend-item"><div class="legend-color" style="background:#5cb85c"></div>V2 Storage (refs)</div>
+  <div class="legend-item"><div class="legend-color" style="background:#9b59b6"></div>Compaction (Workstream B)</div>
+  <div class="legend-item"><div class="legend-color" style="background:#f0c040"></div>V1 Storage (branch)</div>
+  <div class="legend-item"><div class="legend-color" style="background:#e74c3c"></div>Rollout / Migration</div>
+</div>
+
+<div id="tooltip"><h4></h4><p></p></div>
+
+<script>
+// ---- Minimal 3D engine (no dependencies) ----
+const canvas = document.createElement('canvas');
+document.body.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+
+// Camera
+let camRX = -0.3, camRY = 0.4, camDist = 22, camTarget = [0, 0, 0];
+let dragging = false, lastMX, lastMY;
+
+canvas.addEventListener('mousedown', e => { dragging = true; lastMX = e.clientX; lastMY = e.clientY; });
+addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  if (!dragging) return;
+  camRY += (e.clientX - lastMX) * 0.005;
+  camRX += (e.clientY - lastMY) * 0.005;
+  camRX = Math.max(-1.2, Math.min(1.2, camRX));
+  lastMX = e.clientX; lastMY = e.clientY;
+});
+addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('wheel', e => { camDist += e.deltaY * 0.01; camDist = Math.max(8, Math.min(40, camDist)); e.preventDefault(); }, {passive:false});
+
+let mouseX = 0, mouseY = 0;
+canvas.addEventListener('click', handleClick);
+
+// 3D math
+function rotateY(p, a) { const c=Math.cos(a),s=Math.sin(a); return [p[0]*c+p[2]*s, p[1], -p[0]*s+p[2]*c]; }
+function rotateX(p, a) { const c=Math.cos(a),s=Math.sin(a); return [p[0], p[1]*c-p[2]*s, p[1]*s+p[2]*c]; }
+function project(p) {
+  let q = [p[0]-camTarget[0], p[1]-camTarget[1], p[2]-camTarget[2]];
+  q = rotateY(q, -camRY); q = rotateX(q, -camRX);
+  const z = q[2] + camDist;
+  const f = 800 / Math.max(z, 0.1);
+  return [W/2 + q[0]*f, H/2 - q[1]*f, z, f];
+}
+
+// Node definitions
+const nodes = [];
+const edges = [];
+let currentView = 'full';
+
+function N(id, label, x, y, z, color, size, desc, group) {
+  nodes.push({id, label, x, y, z, color, size: size||1, desc, group: group||'all', sx:0, sy:0, sz:0, sf:0});
+}
+function E(from, to, color, label, group, dashed) {
+  edges.push({from, to, color: color||'rgba(100,140,255,0.3)', label:label||'', group:group||'all', dashed:dashed||false});
+}
+
+// ============ NODES ============
+
+// --- Agents (top layer) ---
+N('claude',    'Claude Code',    -6,  6,  -2, '#4a90d9', 1.1, 'Primary AI agent. Fires SessionStart, UserPromptSubmit, Stop, PreToolUse, PostToolUse hooks.', 'agents');
+N('gemini',    'Gemini CLI',     -2,  6,  -2, '#4a90d9', 0.9, 'Google Gemini CLI agent. Same hook interface, different transcript format (JSON messages array).', 'agents');
+N('cursor',    'Cursor',          2,  6,  -2, '#4a90d9', 0.9, 'Cursor IDE agent integration.', 'agents');
+N('opencode',  'OpenCode',        5,  6,  -1, '#4a90d9', 0.8, 'OpenCode agent. JSON export format.', 'agents');
+N('copilot',   'Copilot CLI',     7,  6,   1, '#4a90d9', 0.8, 'GitHub Copilot CLI agent. Session-wide token aggregates.', 'agents');
+N('factory',   'Factory AI',      5,  6,   2, '#4a90d9', 0.8, 'Factory AI Droid agent.', 'agents');
+N('external',  'External Plugins',-6,  6,   2, '#4a90d9', 0.9, 'External agent protocol. Adds compact-transcript subcommand in V2.', 'agents');
+
+// --- Hook / CLI layer ---
+N('hooks',     'Git Hooks',      -2,  3,   0, '#e8734a', 1.2, 'SessionStart, Stop, UserPromptSubmit, PreToolUse, PostToolUse. Fire events into the state machine.', 'cli');
+N('parser',    'ParseHookEvent', 2,  3,   0, '#e8734a', 1.0, 'Agent-specific hook parsing. Translates hook calls into typed events (TurnStart, TurnEnd, SessionStart, etc).', 'cli');
+N('statemach', 'Phase State\nMachine', 0,  1.5, 0, '#e8734a', 1.3, 'ACTIVE / IDLE / ENDED phases. Events: TurnStart, TurnEnd, GitCommit, SessionStart, SessionStop. Emits actions.', 'cli');
+N('strategy',  'ManualCommit\nStrategy', 0, -0.5, 0, '#e8734a', 1.4, 'Core strategy implementation. SaveStep, Rewind, OnCommit (condense). Never modifies active branch.', 'cli');
+
+// --- V2 Storage (new) ---
+N('v2refs',    'V2 Refs\nrefs/entire/\ncheckpoints/v2/', -5, -3, -1, '#5cb85c', 1.3, 'NEW in V2: Individual git refs per checkpoint. Can be pushed/fetched selectively. Each ref points to a tree.', 'v2');
+N('v2main',    '/main\n(metadata +\ncompact transcript)', -7, -5.5, -2, '#5cb85c', 1.1, 'Checkpoint metadata.json + transcript.jsonl (compacted) + assets/. The "what you need" layer.', 'v2');
+N('v2full',    '/full/current\n(raw transcript)', -3, -5.5, -2, '#5cb85c', 1.0, 'Raw full.jsonl — complete agent transcript. The "everything" layer.', 'v2');
+N('v2archive', '/full/gen-N\n(archived)', -3, -7.5, -1, '#5cb85c', 0.8, 'Rotated older generations. Controlled by generation_retention_days setting.', 'v2');
+
+// --- Compaction (Workstream B) ---
+N('compactor', 'Transcript\nCompactor', 5, -1.5, 1, '#9b59b6', 1.2, 'Agent-specific compaction. Converts raw transcripts to Entire Transcript Format (JSONL).', 'compact');
+N('etformat',  'Entire Transcript\nFormat', 5, -3.5, 2, '#9b59b6', 1.0, 'Common format: UserEntry, AssistantEntry, UserToolResultEntry. Strips thinking/progress/system noise.', 'compact');
+N('assets',    'Asset\nExternalization', 7, -3.5, 0, '#9b59b6', 0.8, 'Extracts base64 images from transcripts into separate asset files.', 'compact');
+
+// --- V1 Storage (legacy) ---
+N('v1branch',  'V1 Branch\nentire/checkpoints/v1', 0, -4, 4, '#f0c040', 1.1, 'LEGACY: Single orphan branch with sharded directories (<id[:2]>/<id[2:]>/). All-or-nothing push.', 'v1');
+N('shadow',    'Shadow Branches\nentire/<hash>-<wt>', -1, -2, 5, '#f0c040', 0.9, 'Temporary per-session branches. Checkpoints stored here before condensation to metadata branch.', 'v1');
+
+// --- Rollout ---
+N('dualwrite', 'Dual Write\nv1 + v2', 0, -2.5, 2, '#e74c3c', 1.0, 'Phase 1: Write to BOTH v1 branch and v2 refs simultaneously. Behind checkpoints_v2 setting.', 'rollout');
+N('migrate',   'Migration\nTool', 3, -6, 4, '#e74c3c', 0.9, 'Converts old v1 checkpoint data to v2 ref format. Backfills transcript.jsonl.', 'rollout');
+N('settings',  'checkpoints_v2\nsetting', 3, 0, 3, '#e74c3c', 0.8, 'Strategy option flag. Already implemented in settings.go. Gates the v2 codepath.', 'rollout');
+
+// --- CLI commands ---
+N('explain',   'entire explain',  -8, -1, 3, '#3498db', 0.7, 'View checkpoint details, transcripts, prompts. Updated to read from v2 refs with v1 fallback.', 'commands');
+N('rewind',    'entire rewind',   -8, -2.5, 4, '#3498db', 0.7, 'Restore code to a previous checkpoint. Updated for v2 ref reading.', 'commands');
+N('resume',    'entire resume',   -8, -4, 3, '#3498db', 0.7, 'Switch branch and resume session. Reads from v2 /full/current.', 'commands');
+N('status',    'entire status',   -8,  0.5, 4, '#3498db', 0.7, 'Show session state and checkpoint info.', 'commands');
+
+// ============ EDGES ============
+
+// Agents → Hooks
+['claude','gemini','cursor','opencode','copilot','factory','external'].forEach(a => {
+  E(a, 'hooks', 'rgba(74,144,217,0.4)', '', 'agents');
+});
+
+// Hook pipeline
+E('hooks', 'parser', 'rgba(232,115,74,0.6)', 'hook event', 'cli');
+E('parser', 'statemach', 'rgba(232,115,74,0.6)', 'typed event', 'cli');
+E('statemach', 'strategy', 'rgba(232,115,74,0.6)', 'actions', 'cli');
+
+// Strategy → Storage
+E('strategy', 'shadow', 'rgba(240,192,64,0.5)', 'SaveStep()', 'v1');
+E('strategy', 'dualwrite', 'rgba(231,76,60,0.5)', 'OnCommit()', 'rollout');
+E('dualwrite', 'v1branch', 'rgba(240,192,64,0.5)', 'v1 write', 'v1', true);
+E('dualwrite', 'v2refs', 'rgba(92,184,92,0.6)', 'v2 write', 'v2');
+
+// V2 ref structure
+E('v2refs', 'v2main', 'rgba(92,184,92,0.5)', '/main', 'v2');
+E('v2refs', 'v2full', 'rgba(92,184,92,0.5)', '/full', 'v2');
+E('v2full', 'v2archive', 'rgba(92,184,92,0.3)', 'rotate', 'v2', true);
+
+// Compaction
+E('strategy', 'compactor', 'rgba(155,89,182,0.5)', 'raw transcript', 'compact');
+E('compactor', 'etformat', 'rgba(155,89,182,0.5)', 'compact', 'compact');
+E('compactor', 'assets', 'rgba(155,89,182,0.4)', 'extract', 'compact');
+E('etformat', 'v2main', 'rgba(155,89,182,0.4)', 'transcript.jsonl', 'compact');
+E('assets', 'v2main', 'rgba(155,89,182,0.3)', 'assets/*', 'compact');
+
+// Settings
+E('settings', 'dualwrite', 'rgba(231,76,60,0.4)', 'gates', 'rollout');
+
+// Migration
+E('v1branch', 'migrate', 'rgba(231,76,60,0.3)', 'read v1', 'rollout', true);
+E('migrate', 'v2refs', 'rgba(231,76,60,0.4)', 'write v2', 'rollout', true);
+
+// CLI commands → strategy
+['explain','rewind','resume','status'].forEach(c => {
+  E(c, 'strategy', 'rgba(52,152,219,0.3)', '', 'commands');
+});
+
+// View configs
+const viewConfigs = {
+  full: { groups: null, camRY: 0.4, camRX: -0.3, camDist: 22 },
+  dataflow: { groups: ['agents','cli','v2','compact'], camRY: 0.2, camRX: -0.25, camDist: 20 },
+  workstreams: { groups: ['cli','v2','compact','rollout'], camRY: 0.6, camRX: -0.35, camDist: 20 },
+  rollout: { groups: ['v1','v2','rollout','cli'], camRY: 0.8, camRX: -0.2, camDist: 22 },
+};
+
+function setView(view) {
+  currentView = view;
+  const cfg = viewConfigs[view];
+  targetCamRY = cfg.camRY; targetCamRX = cfg.camRX; targetCamDist = cfg.camDist;
+  document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#view-toggle button').forEach(b => { if(b.textContent.toLowerCase().includes(view.substring(0,4))) b.classList.add('active'); });
+}
+let targetCamRY = camRY, targetCamRX = camRX, targetCamDist = camDist;
+
+function isVisible(group) {
+  const cfg = viewConfigs[currentView];
+  if (!cfg.groups) return true;
+  return cfg.groups.includes(group);
+}
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+let hoveredNode = null;
+
+function handleClick(e) {
+  const found = findNodeAt(e.clientX, e.clientY);
+  if (found) {
+    tooltip.querySelector('h4').textContent = found.label.replace(/\n/g, ' ');
+    tooltip.querySelector('p').textContent = found.desc;
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(e.clientX + 12, W - 340) + 'px';
+    tooltip.style.top = Math.min(e.clientY + 12, H - 150) + 'px';
+  } else {
+    tooltip.style.display = 'none';
+  }
+}
+
+function findNodeAt(mx, my) {
+  let best = null, bestD = 30;
+  for (const n of nodes) {
+    if (!isVisible(n.group)) continue;
+    const dx = n.sx - mx, dy = n.sy - my;
+    const d = Math.sqrt(dx*dx + dy*dy);
+    if (d < bestD && n.sz > 0) { best = n; bestD = d; }
+  }
+  return best;
+}
+
+// ============ RENDER ============
+let time = 0;
+function render() {
+  requestAnimationFrame(render);
+  time += 0.01;
+
+  // Smooth camera
+  if (!dragging) {
+    camRY += (targetCamRY - camRY) * 0.03;
+    camRX += (targetCamRX - camRX) * 0.03;
+  }
+  camDist += (targetCamDist - camDist) * 0.05;
+
+  // Auto-rotate slowly when not dragging
+  if (!dragging) targetCamRY += 0.0008;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw grid
+  ctx.strokeStyle = 'rgba(40,50,80,0.3)';
+  ctx.lineWidth = 0.5;
+  for (let i = -10; i <= 10; i += 2) {
+    const p1 = project([i, -8, -5]), p2 = project([i, -8, 5]);
+    const p3 = project([-10, -8, i/2]), p4 = project([10, -8, i/2]);
+    if (p1[2] > 0 && p2[2] > 0) { ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]); ctx.stroke(); }
+    if (p3[2] > 0 && p4[2] > 0) { ctx.beginPath(); ctx.moveTo(p3[0],p3[1]); ctx.lineTo(p4[0],p4[1]); ctx.stroke(); }
+  }
+
+  // Project nodes
+  for (const n of nodes) {
+    const bob = Math.sin(time * 1.5 + n.x * 0.5 + n.z * 0.3) * 0.08;
+    const [sx, sy, sz, sf] = project([n.x, n.y + bob, n.z]);
+    n.sx = sx; n.sy = sy; n.sz = sz; n.sf = sf;
+  }
+
+  // Sort by depth for painter's algorithm
+  const sortedEdges = [...edges].sort((a, b) => {
+    const na = nodes.find(n => n.id === a.from), nb = nodes.find(n => n.id === b.from);
+    return (nb?.sz||0) - (na?.sz||0);
+  });
+
+  // Draw edges
+  for (const e of sortedEdges) {
+    const nf = nodes.find(n => n.id === e.from);
+    const nt = nodes.find(n => n.id === e.to);
+    if (!nf || !nt) continue;
+    const visF = isVisible(nf.group), visT = isVisible(nt.group);
+    if (!visF && !visT) continue;
+    if (nf.sz <= 0 || nt.sz <= 0) continue;
+
+    const alpha = (visF && visT) ? 1 : 0.15;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = e.color;
+    ctx.lineWidth = 1.5;
+    if (e.dashed) ctx.setLineDash([6, 4]);
+    else ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(nf.sx, nf.sy);
+
+    // Curved edges
+    const mx = (nf.sx + nt.sx) / 2;
+    const my = (nf.sy + nt.sy) / 2 - 15;
+    ctx.quadraticCurveTo(mx, my, nt.sx, nt.sy);
+    ctx.stroke();
+
+    // Arrow
+    const angle = Math.atan2(nt.sy - my, nt.sx - mx);
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.moveTo(nt.sx, nt.sy);
+    ctx.lineTo(nt.sx - 8*Math.cos(angle-0.3), nt.sy - 8*Math.sin(angle-0.3));
+    ctx.lineTo(nt.sx - 8*Math.cos(angle+0.3), nt.sy - 8*Math.sin(angle+0.3));
+    ctx.fill();
+
+    // Edge label
+    if (e.label && alpha > 0.5) {
+      ctx.font = '9px system-ui';
+      ctx.fillStyle = 'rgba(180,200,255,0.6)';
+      ctx.fillText(e.label, mx - ctx.measureText(e.label).width/2, my - 5);
+    }
+    ctx.restore();
+  }
+
+  // Sort nodes by depth
+  const sortedNodes = [...nodes].sort((a, b) => b.sz - a.sz);
+
+  // Draw nodes
+  for (const n of sortedNodes) {
+    if (n.sz <= 0) continue;
+    const vis = isVisible(n.group);
+    const alpha = vis ? 1 : 0.1;
+    const r = n.size * n.sf * 0.06;
+    if (r < 2) continue;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    // Glow
+    const glow = ctx.createRadialGradient(n.sx, n.sy, 0, n.sx, n.sy, r * 2.5);
+    glow.addColorStop(0, n.color + '40');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(n.sx - r*3, n.sy - r*3, r*6, r*6);
+
+    // Node body
+    const grad = ctx.createRadialGradient(n.sx - r*0.3, n.sy - r*0.3, 0, n.sx, n.sy, r);
+    grad.addColorStop(0, n.color);
+    grad.addColorStop(1, n.color + '80');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+
+    // Different shapes per group
+    if (n.group === 'agents') {
+      // Hexagon
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 3 * i - Math.PI/6;
+        const px = n.sx + r * Math.cos(a), py = n.sy + r * Math.sin(a);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+    } else if (n.group === 'v2') {
+      // Rounded rect
+      roundRect(ctx, n.sx - r, n.sy - r*0.8, r*2, r*1.6, r*0.3);
+    } else if (n.group === 'compact') {
+      // Diamond
+      ctx.moveTo(n.sx, n.sy - r);
+      ctx.lineTo(n.sx + r, n.sy);
+      ctx.lineTo(n.sx, n.sy + r);
+      ctx.lineTo(n.sx - r, n.sy);
+      ctx.closePath();
+    } else {
+      ctx.arc(n.sx, n.sy, r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = n.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    if (r > 8 && alpha > 0.3) {
+      ctx.fillStyle = '#fff';
+      ctx.font = `${Math.min(11, r * 0.55)}px system-ui`;
+      ctx.textAlign = 'center';
+      const lines = n.label.split('\n');
+      const lh = Math.min(13, r * 0.6);
+      const startY = n.sy + r + lh + 2;
+      lines.forEach((line, i) => {
+        ctx.fillStyle = i === 0 ? '#fff' : 'rgba(200,210,240,0.7)';
+        ctx.font = i === 0 ? `bold ${Math.min(11, r*0.55)}px system-ui` : `${Math.min(9, r*0.45)}px system-ui`;
+        ctx.fillText(line, n.sx, startY + i * lh);
+      });
+    }
+
+    ctx.restore();
+  }
+
+  // Layer labels
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.font = 'bold 13px system-ui';
+  ctx.fillStyle = '#4a90d9';
+  const lp1 = project([-9, 7, 0]);
+  if (lp1[2] > 0) ctx.fillText('AGENTS', lp1[0], lp1[1]);
+
+  ctx.fillStyle = '#e8734a';
+  const lp2 = project([-9, 4, 0]);
+  if (lp2[2] > 0) ctx.fillText('CLI PIPELINE', lp2[0], lp2[1]);
+
+  ctx.fillStyle = '#5cb85c';
+  const lp3 = project([-9, -2, -2]);
+  if (lp3[2] > 0) ctx.fillText('V2 STORAGE', lp3[0], lp3[1]);
+
+  ctx.fillStyle = '#f0c040';
+  const lp4 = project([-9, -2, 5]);
+  if (lp4[2] > 0) ctx.fillText('V1 LEGACY', lp4[0], lp4[1]);
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+render();
+</script>
+</body>
+</html>
