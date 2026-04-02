@@ -2126,60 +2126,20 @@ func getStagedFiles(ctx context.Context) ([]string, error) {
 // Reads prompt.txt directly from the shadow branch tree instead of parsing the full
 // transcript (which involves token counting, context generation, etc.).
 // Returns empty string if no prompt can be retrieved.
-func (s *ManualCommitStrategy) getLastPrompt(_ context.Context, repo *git.Repository, state *SessionState) string {
-	shadowBranchName := getShadowBranchNameForCommit(state.BaseCommit, state.WorktreeID)
-	refName := plumbing.NewBranchReferenceName(shadowBranchName)
-	ref, err := repo.Reference(refName, true)
-	if err != nil {
+func (s *ManualCommitStrategy) getLastPrompt(ctx context.Context, repo *git.Repository, state *SessionState) string {
+	prompts := readPromptsFromShadowBranch(ctx, repo, state)
+	if len(prompts) == 0 {
 		return ""
 	}
-
-	commit, err := repo.CommitObject(ref.Hash())
-	if err != nil {
-		return ""
-	}
-
-	tree, err := commit.Tree()
-	if err != nil {
-		return ""
-	}
-
-	// Read prompt.txt directly from the shadow branch tree.
-	// Prompts are separated by "\n\n---\n\n" — extract the last one.
-	metadataDir := paths.EntireMetadataDir + "/" + state.SessionID
-	promptPath := metadataDir + "/" + paths.PromptFileName
-	file, err := tree.File(promptPath)
-	if err != nil {
-		return ""
-	}
-
-	content, err := file.Contents()
-	if err != nil {
-		return ""
-	}
-
-	return extractLastPrompt(content)
-}
-
-// extractLastPrompt returns the last non-empty prompt from prompt.txt content.
-// Prompts are separated by "\n\n---\n\n".
-func extractLastPrompt(content string) string {
-	if content == "" {
-		return ""
-	}
-
-	prompts := strings.Split(content, "\n\n---\n\n")
-	// Iterate backwards to find the last non-empty prompt
+	// Return the last non-empty, non-separator prompt
 	for i := len(prompts) - 1; i >= 0; i-- {
-		cleaned := strings.TrimSpace(prompts[i])
-		if cleaned != "" && !isOnlySeparators(cleaned) {
-			return cleaned
+		if !isOnlySeparators(prompts[i]) {
+			return prompts[i]
 		}
 	}
 	return ""
 }
 
-// TODO: check if its duplicated
 // readPromptsFromShadowBranch reads prompt.txt from the shadow branch tree.
 // Returns all prompts split on "\n\n---\n\n", or nil if prompt.txt is not available.
 func readPromptsFromShadowBranch(_ context.Context, repo *git.Repository, state *SessionState) []string {
